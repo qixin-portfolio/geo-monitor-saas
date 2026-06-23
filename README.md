@@ -1,6 +1,6 @@
 # GEO Monitor SaaS MVP
 
-第一版目标：一个真实可上线的 GEO Monitor SaaS。当前已经有 SaaS 基础壳和 V1 手动监测。
+第一版目标：一个真实可上线的 GEO Monitor SaaS。当前已经有 SaaS 基础壳、V1 手动监测，以及 `V3 Phase 1` 的自动化监测闭环基础版。
 
 ## 功能
 
@@ -11,6 +11,7 @@
 - 套餐关键词限制
 - Dashboard 数据看板
 - V1 手动 GEO 监测：录入 AI 回答、品牌提及、排名、竞品
+- V3 Phase 1 自动 GEO 监测：手动触发 / Vercel Cron、自动入库、趋势与异常提示
 - 香港/国内云服务器 Docker + Postgres 生产部署方案
 - Vercel 备选部署
 
@@ -29,6 +30,33 @@ npm run dev
 ```text
 http://localhost:3000
 ```
+
+## Automated Monitoring (V3 Phase 1)
+
+当前自动化版本先接 1 条模型通路，并优先给 Dashboard 结果，不做多模型路由和队列。
+
+需要补充这些环境变量：
+
+```text
+OPENAI_API_KEY=
+MONITORING_MODEL=gpt-4o-mini
+MONITORING_CRON_SECRET=
+```
+
+本地验证流程：
+
+1. 至少创建 1 个已启用关键词。
+2. 在 Dashboard 或关键词页点击 `立即运行本轮监测`。
+3. 确认数据库里出现 `RunBatch`、`QueryRun`、`InsightSnapshot`。
+4. 确认 Dashboard 的推荐率、平均排名、竞品和异常提示更新。
+
+Vercel Cron 当前使用：
+
+- route：`/api/internal/monitoring/run`
+- header：`x-monitoring-cron-secret`
+- schedule：`0 */12 * * *`
+
+这层调度只是入口，真正的监测逻辑放在共享服务里，后续可以迁到 ECS worker。
 
 ## Stripe 测试模式
 

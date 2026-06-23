@@ -21,20 +21,48 @@ enum SubscriptionStatus {
   INCOMPLETE
 }
 
+enum RunTriggerType {
+  CRON
+  MANUAL
+}
+
+enum RunBatchStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  PARTIAL_FAILURE
+  FAILED
+}
+
+enum QueryRunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum TrendDirection {
+  UP
+  FLAT
+  DOWN
+}
+
 model Tenant {
-  id                     String             @id @default(cuid())
-  name                   String
-  industry               String?
-  region                 String?
-  brandName              String?
-  plan                   Plan               @default(FREE)
-  stripeCustomerId       String?
-  stripeSubscriptionId   String?
-  subscriptionStatus     SubscriptionStatus @default(NONE)
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  users                  User[]
-  queries                Query[]
+  id                   String             @id @default(cuid())
+  name                 String
+  industry             String?
+  region               String?
+  brandName            String?
+  plan                 Plan               @default(FREE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  subscriptionStatus   SubscriptionStatus @default(NONE)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  users                User[]
+  queries              Query[]
+  runBatches           RunBatch[]
+  insightSnapshots     InsightSnapshot[]
 }
 
 model User {
@@ -58,6 +86,7 @@ model Query {
   updatedAt DateTime   @updatedAt
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   responses Response[]
+  queryRuns QueryRun[]
 }
 
 model Response {
@@ -71,4 +100,65 @@ model Response {
   notes       String?
   createdAt   DateTime @default(now())
   query       Query    @relation(fields: [queryId], references: [id])
+}
+
+model RunBatch {
+  id           String           @id @default(cuid())
+  tenantId     String
+  triggerType  RunTriggerType
+  status       RunBatchStatus   @default(PENDING)
+  queryCount   Int              @default(0)
+  successCount Int              @default(0)
+  failureCount Int              @default(0)
+  errorSummary String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  tenant       Tenant           @relation(fields: [tenantId], references: [id])
+  queryRuns    QueryRun[]
+  snapshot     InsightSnapshot?
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+}
+
+model QueryRun {
+  id           String         @id @default(cuid())
+  batchId      String
+  queryId      String
+  provider     String
+  model        String
+  status       QueryRunStatus @default(PENDING)
+  prompt       String
+  rawOutput    String?
+  mentioned    Boolean        @default(false)
+  rank         Int?
+  competitors  String[]       @default([])
+  notes        String?
+  errorMessage String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  batch        RunBatch       @relation(fields: [batchId], references: [id])
+  query        Query          @relation(fields: [queryId], references: [id])
+
+  @@index([batchId, createdAt])
+  @@index([queryId, createdAt])
+  @@index([status])
+}
+
+model InsightSnapshot {
+  id             String         @id @default(cuid())
+  tenantId       String
+  batchId        String         @unique
+  mentionRate    Int
+  averageRank    Float?
+  competitorList String[]       @default([])
+  trendDirection TrendDirection
+  anomalyFlags   String[]       @default([])
+  createdAt      DateTime       @default(now())
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  batch          RunBatch       @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId, createdAt])
 }

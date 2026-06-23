@@ -5,6 +5,7 @@ import type { Plan } from "@prisma/client"
 
 import { Paywall } from "@/components/paywall"
 import { PlanBadge } from "@/components/plan-badge"
+import { QueryRunStatusBadge } from "@/components/query-run-status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -29,11 +30,24 @@ type ManualResponse = {
   createdAt: string | Date
 }
 
+type AutomatedRun = {
+  id: string
+  status: string
+  mentioned: boolean
+  rank: number | null
+  competitors: string[]
+  errorMessage: string | null
+  createdAt: string | Date
+}
+
 type QueryItem = {
   id: string
   text: string
   platform: string
+  active: boolean
   responses: ManualResponse[]
+  queryRuns: AutomatedRun[]
+  latestRun: AutomatedRun | null
 }
 
 export function QueryManager({
@@ -59,22 +73,21 @@ export function QueryManager({
 
   const limit = getPlanLimit(tenant.plan)
   const reachedLimit = queries.length >= limit
-  const responseCount = queries.reduce(
-    (sum, query) => sum + query.responses.length,
-    0
-  )
-  const mentionedCount = queries.reduce(
-    (sum, query) =>
-      sum + query.responses.filter((response) => response.mentioned).length,
-    0
-  )
-  const recommendationRate = responseCount
-    ? Math.round((mentionedCount / responseCount) * 100)
+
+  const automatedRuns = queries.flatMap((query) => query.queryRuns)
+  const manualResponses = queries.flatMap((query) => query.responses)
+  const monitoringCount = automatedRuns.length || manualResponses.length
+  const mentionedCount = automatedRuns.length
+    ? automatedRuns.filter((run) => run.mentioned).length
+    : manualResponses.filter((response) => response.mentioned).length
+  const recommendationRate = monitoringCount
+    ? Math.round((mentionedCount / monitoringCount) * 100)
     : 0
 
   const competitors = useMemo(() => {
     return Array.from(
       new Set([
+        ...queries.flatMap((query) => query.queryRuns.flatMap((run) => run.competitors)),
         ...queries.flatMap((query) =>
           query.responses.flatMap((response) =>
             response.competitors
@@ -124,11 +137,42 @@ export function QueryManager({
       setQueries((current) => [
         {
           ...data.query,
+          active: true,
           responses: [],
+          queryRuns: [],
+          latestRun: null,
         },
         ...current,
       ])
       setQueryText("")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function toggleQuery(queryId: string, active: boolean) {
+    setSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/queries/${queryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error ?? "切换关键词状态失败")
+        return
+      }
+
+      setQueries((current) =>
+        current.map((query) =>
+          query.id === queryId ? { ...query, active: data.query.active } : query
+        )
+      )
     } finally {
       setSaving(false)
     }
@@ -194,7 +238,7 @@ export function QueryManager({
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">监测记录</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">{responseCount}</CardContent>
+          <CardContent className="text-3xl font-semibold">{monitoringCount}</CardContent>
         </Card>
         <Card>
           <CardHeader>
@@ -210,7 +254,7 @@ export function QueryManager({
         <CardHeader>
           <CardTitle>品牌设置</CardTitle>
           <CardDescription>
-            先填品牌、行业和地区，后续录入会围绕这个企业空间做统计。
+            先填品牌、行业和地区，后续自动监测和手动补录都会围绕这个企业空间。
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
@@ -249,7 +293,7 @@ export function QueryManager({
 
       <Card>
         <CardHeader>
-          <CardTitle>添加关键词</CardTitle>
+          <CardTitle>添加监测关键词</CardTitle>
           <CardDescription>
             示例：交城装修公司哪家靠谱？本地装修公司推荐？
           </CardDescription>
@@ -276,7 +320,7 @@ export function QueryManager({
               <CardHeader>
                 <CardTitle>还没有关键词</CardTitle>
                 <CardDescription>
-                  先添加一个客户会问 AI 的问题，再把 AI 回答手动录进来。
+                  先添加一个客户会问 AI 的问题，系统会自动跑；你也可以继续手动补录回答。
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -284,12 +328,51 @@ export function QueryManager({
             queries.map((query) => (
               <Card key={query.id}>
                 <CardHeader>
-                  <CardTitle>{query.text}</CardTitle>
-                  <CardDescription className="mt-2">
-                    已录入 {query.responses.length} 条回答
-                  </CardDescription>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <CardTitle>{query.text}</CardTitle>
+                      <CardDescription className="mt-2 flex flex-wrap items-center gap-2">
+                        <QueryRunStatusBadge
+                          status={query.latestRun?.status ?? "NEVER_RUN"}
+                        />
+                        <span>{query.active ? "已启用自动监测" : "已暂停自动监测"}</span>
+                        <span>手动录入 {query.responses.length} 条</span>
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      disabled={saving}
+                      onClick={() => toggleQuery(query.id, !query.active)}
+                    >
+                      {query.active ? "暂停" : "启用"}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
+                  {query.latestRun ? (
+                    <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <QueryRunStatusBadge status={query.latestRun.status} />
+                        <span>
+                          {new Date(query.latestRun.createdAt).toLocaleString("zh-CN", {
+                            hour12: false,
+                          })}
+                        </span>
+                        {query.latestRun.rank ? (
+                          <span>排名：{query.latestRun.rank}</span>
+                        ) : null}
+                        <span>
+                          {query.latestRun.mentioned ? "自动结果提到品牌" : "自动结果未提到品牌"}
+                        </span>
+                      </div>
+                      {query.latestRun.errorMessage ? (
+                        <p className="mt-2 text-destructive">
+                          失败原因：{query.latestRun.errorMessage}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <form action={createResponse} className="flex flex-col gap-3">
                     <input type="hidden" name="queryId" value={query.id} />
                     <div className="grid gap-3 md:grid-cols-3">
@@ -321,9 +404,29 @@ export function QueryManager({
                       </div>
                     </div>
                     <Button className="self-start" disabled={saving}>
-                      保存回答
+                      保存手动回答
                     </Button>
                   </form>
+
+                  {query.queryRuns.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-medium">最近自动运行</p>
+                      {query.queryRuns.map((run) => (
+                        <div key={run.id} className="rounded-lg border p-3 text-sm">
+                          <div className="flex flex-wrap gap-2">
+                            <QueryRunStatusBadge status={run.status} />
+                            <span>
+                              {new Date(run.createdAt).toLocaleString("zh-CN", {
+                                hour12: false,
+                              })}
+                            </span>
+                            <span>{run.mentioned ? "提到品牌" : "未提到品牌"}</span>
+                            {run.rank ? <span>排名：{run.rank}</span> : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
 
                   <div className="flex flex-col gap-2">
                     {query.responses.map((response) => (
@@ -348,7 +451,7 @@ export function QueryManager({
         <Card>
           <CardHeader>
             <CardTitle>竞品汇总</CardTitle>
-            <CardDescription>根据手动录入自动汇总。</CardDescription>
+            <CardDescription>自动监测与手动录入合并汇总。</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {competitors.length === 0 ? (
