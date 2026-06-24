@@ -30,3 +30,32 @@ export async function PATCH(
 
   return NextResponse.json({ query: updated })
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ queryId: string }> }
+) {
+  const tenant = await getOrCreateTenant()
+  const { queryId } = await params
+  const prisma = getPrisma()
+
+  const query = await prisma.query.findFirst({
+    where: {
+      id: queryId,
+      tenantId: tenant.id,
+    },
+  })
+
+  if (!query) {
+    return NextResponse.json({ error: "关键词不存在" }, { status: 404 })
+  }
+
+  // Delete related records first
+  await prisma.$transaction([
+    prisma.queryRun.deleteMany({ where: { queryId: query.id } }),
+    prisma.response.deleteMany({ where: { queryId: query.id } }),
+    prisma.query.delete({ where: { id: query.id } }),
+  ])
+
+  return NextResponse.json({ success: true })
+}
