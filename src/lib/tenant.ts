@@ -1,37 +1,59 @@
-import { auth, currentUser } from "@clerk/nextjs/server"
-
 import { getPrisma } from "@/lib/prisma"
 
-export async function getOrCreateTenant() {
-  const { userId } = await auth()
+const isDev = process.env.NODE_ENV === "development"
 
-  if (!userId) {
-    throw new Error("Unauthorized")
-  }
+const DEV_USER_ID = "dev-user-local"
+
+async function devGetOrCreateTenant() {
+  const prisma = getPrisma()
+  const existingUser = await prisma.user.findUnique({
+    where: { clerkUserId: DEV_USER_ID },
+    include: { tenant: true },
+  })
+  if (existingUser?.tenant) return existingUser.tenant
+
+  return prisma.tenant.create({
+    data: {
+      name: "开发企业空间",
+      brandName: "未设置品牌",
+      users: {
+        create: {
+          clerkUserId: DEV_USER_ID,
+          email: "dev@local.test",
+          name: "开发用户",
+        },
+      },
+    },
+  })
+}
+
+export async function getOrCreateTenant() {
+  if (isDev) return devGetOrCreateTenant()
+
+  const { auth, currentUser } = await import("@clerk/nextjs/server")
+  let { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
 
   const prisma = getPrisma()
   const existingUser = await prisma.user.findUnique({
     where: { clerkUserId: userId },
     include: { tenant: true },
   })
-
-  if (existingUser?.tenant) {
-    return existingUser.tenant
-  }
+  if (existingUser?.tenant) return existingUser.tenant
 
   const clerkUser = await currentUser()
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null
-  const name = clerkUser?.fullName ?? clerkUser?.firstName ?? null
+  const clerkEmail = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null
+  const clerkName = clerkUser?.fullName ?? clerkUser?.firstName ?? null
 
   return prisma.tenant.create({
     data: {
-      name: name ? `${name} 的企业空间` : "我的企业空间",
+      name: clerkName ? `${clerkName} 的企业空间` : "我的企业空间",
       brandName: "未设置品牌",
       users: {
         create: {
           clerkUserId: userId,
-          email,
-          name,
+          email: clerkEmail,
+          name: clerkName,
         },
       },
     },
