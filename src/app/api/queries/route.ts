@@ -10,7 +10,7 @@ export async function GET() {
   const queries = await prisma.query.findMany({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: "desc" },
-    include: { responses: { orderBy: { createdAt: "desc" } } },
+    include: { responses: { orderBy: { createdAt: "desc" }, take: 10 } },
   })
 
   return NextResponse.json({ queries })

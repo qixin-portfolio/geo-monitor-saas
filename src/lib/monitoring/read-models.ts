@@ -149,6 +149,7 @@ export async function getQueryMonitoringPageData() {
       },
       responses: {
         orderBy: { createdAt: "desc" },
+        take: 5,
       },
     },
   })
