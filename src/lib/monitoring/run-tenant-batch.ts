@@ -1,7 +1,7 @@
 import { getPrisma } from "@/lib/prisma"
 
 import { buildInsightSnapshot } from "./build-insight-snapshot"
-import { OpenAIProvider } from "./openai-provider"
+import { createProvider } from "./config"
 import { runQuery } from "./run-query"
 
 type RunTenantBatchInput = {
@@ -54,7 +54,7 @@ export async function runTenantBatch({
     },
   })
 
-  const provider = new OpenAIProvider()
+  const provider = createProvider()
   const queryRunResults = []
 
   for (const query of tenant.queries) {

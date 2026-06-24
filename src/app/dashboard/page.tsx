@@ -4,6 +4,7 @@ import { AnomalyBanner } from "@/components/anomaly-banner"
 import { DashboardStatCard } from "@/components/dashboard-stat-card"
 import { PlanBadge } from "@/components/plan-badge"
 import { RunNowButton } from "@/components/run-now-button"
+import { TrendChart } from "@/components/trend-chart"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Download } from "lucide-react"
 import { getPlanLimit } from "@/lib/plans"
 import { getMonitoringDashboardData } from "@/lib/monitoring/read-models"
 
@@ -50,6 +52,12 @@ export default async function DashboardPage() {
           <RunNowButton />
           <Button asChild variant="outline">
             <Link href="/dashboard/queries">管理关键词</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/api/report/export" download>
+              <Download className="mr-2 h-4 w-4" />
+              导出报告
+            </Link>
           </Button>
         </div>
       </header>
@@ -122,19 +130,41 @@ export default async function DashboardPage() {
               <CardTitle>最近趋势</CardTitle>
               <CardDescription>按最近 5 次快照展示推荐率变化。</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2 text-sm">
-              {recentSnapshots.length === 0 ? (
-                <p className="text-muted-foreground">还没有自动监测趋势数据。</p>
+            <CardContent className="flex flex-col gap-4">
+              <TrendChart
+                snapshots={recentSnapshots.map((s) => ({
+                  ...s,
+                  createdAt: new Date(s.createdAt),
+                }))}
+              />
+              {/* Data table below chart */}
+              {recentSnapshots.length > 0 ? (
+                <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  {recentSnapshots
+                    .slice()
+                    .reverse()
+                    .map((snapshot) => (
+                      <div
+                        key={snapshot.id}
+                        className="flex items-center justify-between rounded border px-3 py-1.5"
+                      >
+                        <span>
+                          {new Date(snapshot.createdAt).toLocaleString("zh-CN", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          })}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {snapshot.mentionRate}%
+                        </span>
+                      </div>
+                    ))}
+                </div>
               ) : (
-                recentSnapshots.map((snapshot) => (
-                  <div
-                    key={snapshot.id}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2"
-                  >
-                    <span>{snapshot.createdAt.toLocaleString("zh-CN", { hour12: false })}</span>
-                    <span>{snapshot.mentionRate}%</span>
-                  </div>
-                ))
+                <p className="text-sm text-muted-foreground">还没有自动监测趋势数据。</p>
               )}
             </CardContent>
           </Card>
