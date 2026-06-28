@@ -6,6 +6,13 @@ export const dynamic = "force-dynamic"
 
 export default async function QueriesPage() {
   const { tenant, queries } = await getQueryMonitoringPageData()
+  const queryManagerKey = queries
+    .map((query) => {
+      const latestRunId = query.latestRun?.id ?? "no-run"
+      const latestResponseId = query.responses[0]?.id ?? "no-response"
+      return `${query.id}:${query.active}:${latestRunId}:${latestResponseId}`
+    })
+    .join("|")
 
   return (
     <div className="flex flex-col gap-6 p-6 md:p-8">
@@ -18,7 +25,11 @@ export default async function QueriesPage() {
         </div>
         <RunNowButton />
       </div>
-      <QueryManager tenant={tenant} initialQueries={queries} />
+      <QueryManager
+        key={queryManagerKey}
+        tenant={tenant}
+        initialQueries={queries}
+      />
     </div>
   )
 }

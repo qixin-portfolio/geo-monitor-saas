@@ -1,10 +1,10 @@
 const statusConfig: Record<string, { label: string; className: string }> = {
   SUCCESS: {
-    label: "成功",
+    label: "监测成功",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   FAILED: {
-    label: "失败",
+    label: "监测失败",
     className: "border-red-200 bg-red-50 text-red-700",
   },
   RUNNING: {

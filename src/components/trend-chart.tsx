@@ -34,10 +34,6 @@ export function TrendChart({ snapshots }: { snapshots: TrendPoint[] }) {
     )
   }
 
-  // Build SVG polyline
-  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ")
-  // Area fill polygon (bottom baseline)
-  const areaPoints = `0,120 ${polylinePoints} 100,120`
   // Build area fill path with proper SVG coordinates
   const areaPath =
     `M 0 120 L ${points.map((p) => `${p.x} ${p.y}`).join(" L ")} L 100 120 Z`

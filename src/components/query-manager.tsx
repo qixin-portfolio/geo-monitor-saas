@@ -1,11 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import type { Plan } from "@prisma/client"
 import {
   CheckSquare,
   Plus,
-  Search,
   Square,
   Trash2,
   Zap,
@@ -25,6 +25,15 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  formatRank,
+  formatRunStatus,
+  getBrandRank,
+  getVisibilityScore,
+  mentionStatusLabel,
+  providerDisplayName,
+  toCompetitorViews,
+} from "@/lib/monitoring/report-view"
 import { getPlanLimit } from "@/lib/plans"
 
 /* ------------------------------------------------------------------ */
@@ -45,11 +54,25 @@ type ManualResponse = {
 type AutomatedRun = {
   id: string
   status: string
+  provider: string
+  model: string
   mentioned: boolean
   rank: number | null
   competitors: string[]
   errorMessage: string | null
+  rawOutput?: string | null
   createdAt: string | Date
+  analysis?: {
+    mentionStatus: string
+    rankType: string
+    brandMentioned: boolean
+    brandRank: number | null
+    visibilityScore: number
+    parserConfidence: number
+    competitorsJson: unknown
+    summary: string | null
+    impactLevel: string
+  } | null
 }
 
 type QueryItem = {
@@ -164,7 +187,12 @@ export function QueryManager({
     return Array.from(
       new Set([
         ...queries.flatMap((query) =>
-          query.queryRuns.flatMap((run) => run.competitors)
+          query.queryRuns.flatMap((run) =>
+            toCompetitorViews({
+              competitorsJson: run.analysis?.competitorsJson,
+              fallbackCompetitors: run.competitors,
+            }).map((competitor) => competitor.name)
+          )
         ),
         ...queries.flatMap((query) =>
           query.responses.flatMap((response) =>
@@ -541,7 +569,20 @@ export function QueryManager({
           {queries.length === 0 ? (
             <EmptyState />
           ) : (
-            queries.map((query) => (
+            queries.map((query) => {
+              const latestRun = query.latestRun
+              const latestCompetitors = latestRun
+                ? toCompetitorViews({
+                    competitorsJson: latestRun.analysis?.competitorsJson,
+                    fallbackCompetitors: latestRun.competitors,
+                  })
+                : []
+              const latestVisibilityScore = latestRun
+                ? getVisibilityScore(latestRun)
+                : null
+              const latestBrandRank = latestRun ? getBrandRank(latestRun) : null
+
+              return (
               <Card key={query.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between gap-3">
@@ -561,9 +602,7 @@ export function QueryManager({
                       <div>
                         <CardTitle>{query.text}</CardTitle>
                         <CardDescription className="mt-2 flex flex-wrap items-center gap-2">
-                          <QueryRunStatusBadge
-                            status={query.latestRun?.status ?? "NEVER_RUN"}
-                          />
+                          <QueryRunStatusBadge status={latestRun?.status ?? "NEVER_RUN"} />
                           <span>
                             {query.active
                               ? "已启用自动监测"
@@ -604,33 +643,78 @@ export function QueryManager({
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
-                  {query.latestRun ? (
+                  {latestRun ? (
                     <div className="rounded-lg border bg-muted/20 p-3 text-sm">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <QueryRunStatusBadge
-                          status={query.latestRun.status}
-                        />
-                        <span>
-                          {new Date(
-                            query.latestRun.createdAt
-                          ).toLocaleString("zh-CN", { hour12: false })}
-                        </span>
-                        {query.latestRun.rank ? (
-                          <span>排名：{query.latestRun.rank}</span>
-                        ) : null}
-                        <span>
-                          {query.latestRun.mentioned
-                            ? "自动结果提到品牌"
-                            : "自动结果未提到品牌"}
-                        </span>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">最新状态</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <QueryRunStatusBadge status={latestRun.status} />
+                            <span>{formatRunStatus(latestRun.status)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Provider / Model</p>
+                          <p className="mt-1">
+                            {providerDisplayName(latestRun.provider)} / {latestRun.model}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">最近运行时间</p>
+                          <p className="mt-1">
+                            {new Date(latestRun.createdAt).toLocaleString("zh-CN", {
+                              hour12: false,
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">品牌状态</p>
+                          <p className="mt-1 font-medium">{mentionStatusLabel(latestRun)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">品牌排名</p>
+                          <p className="mt-1">{formatRank(latestBrandRank)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">可见度 / 竞品</p>
+                          <p className="mt-1">
+                            {latestVisibilityScore ?? "-"} / {latestCompetitors.length} 个
+                          </p>
+                        </div>
                       </div>
-                      {query.latestRun.errorMessage ? (
+                      {latestRun.errorMessage ? (
                         <p className="mt-2 text-destructive">
-                          失败原因：{query.latestRun.errorMessage}
+                          失败原因：{latestRun.errorMessage}
                         </p>
                       ) : null}
+                      {latestRun.rawOutput ? (
+                        <p className="mt-2 line-clamp-4 whitespace-pre-line text-muted-foreground">
+                          {latestRun.rawOutput}
+                        </p>
+                      ) : null}
+                      {latestCompetitors.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {latestCompetitors.map((competitor) => (
+                            <span
+                              key={competitor.name}
+                              className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground"
+                            >
+                              {competitor.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <Button asChild size="sm" variant="outline" className="mt-3">
+                        <Link href={`/dashboard/runs/${latestRun.id}`}>
+                          查看最新 AI 回答
+                        </Link>
+                      </Button>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                      尚未监测
+                    </div>
+                  )}
 
                   <form action={createResponse} className="flex flex-col gap-3">
                     <input type="hidden" name="queryId" value={query.id} />
@@ -699,13 +783,38 @@ export function QueryManager({
                                 run.createdAt
                               ).toLocaleString("zh-CN", { hour12: false })}
                             </span>
+                            <span>{mentionStatusLabel(run)}</span>
+                            <span>{formatRank(getBrandRank(run))}</span>
                             <span>
-                              {run.mentioned ? "提到品牌" : "未提到品牌"}
+                              可见度：{getVisibilityScore(run) ?? "-"}
                             </span>
-                            {run.rank ? (
-                              <span>排名：{run.rank}</span>
-                            ) : null}
                           </div>
+                          {run.rawOutput ? (
+                            <p className="mt-2 line-clamp-4 whitespace-pre-line text-muted-foreground">
+                              {run.rawOutput}
+                            </p>
+                          ) : null}
+                          {run.competitors.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {toCompetitorViews({
+                                competitorsJson: run.analysis?.competitorsJson,
+                                fallbackCompetitors: run.competitors,
+                              }).map((competitor) => (
+                                <span
+                                  key={competitor.name}
+                                  className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground"
+                                >
+                                  {competitor.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                          <Link
+                            href={`/dashboard/runs/${run.id}`}
+                            className="mt-3 inline-flex text-primary hover:underline"
+                          >
+                            查看详情
+                          </Link>
                         </div>
                       ))}
                     </div>
@@ -739,7 +848,8 @@ export function QueryManager({
                   )}
                 </CardContent>
               </Card>
-            ))
+              )
+            })
           )}
         </div>
 
