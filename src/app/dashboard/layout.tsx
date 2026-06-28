@@ -11,16 +11,18 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  if (!isDev && !hasUsableClerkKey()) {
+  const hasClerk = hasUsableClerkKey()
+
+  if (!isDev && !hasClerk) {
     redirect("/pricing")
   }
 
-  return (
+  const shell = (
     <div className="min-h-screen md:grid md:grid-cols-[16rem_1fr]">
       <AppSidebar />
-      <main className="min-w-0">
-        {isDev ? children : <ClerkProvider>{children}</ClerkProvider>}
-      </main>
+      <main className="min-w-0">{children}</main>
     </div>
   )
+
+  return hasClerk ? <ClerkProvider>{shell}</ClerkProvider> : shell
 }
