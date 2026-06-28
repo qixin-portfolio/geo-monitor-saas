@@ -16,6 +16,11 @@ export class OpenAIProvider implements MonitoringProvider {
       apiKey: process.env.OPENAI_API_KEY,
     })
 
+    const rawRequestJson = {
+      provider: "openai",
+      model,
+      input: prompt,
+    }
     const startedAt = Date.now()
 
     const response = await client.responses.create({
@@ -28,6 +33,11 @@ export class OpenAIProvider implements MonitoringProvider {
       model,
       output: response.output_text,
       durationMs: Date.now() - startedAt,
+      inputTokens: response.usage?.input_tokens ?? null,
+      outputTokens: response.usage?.output_tokens ?? null,
+      totalTokens: response.usage?.total_tokens ?? null,
+      rawRequestJson,
+      rawResponseJson: response,
     }
   }
 }

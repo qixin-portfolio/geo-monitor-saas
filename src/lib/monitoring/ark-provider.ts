@@ -1,4 +1,4 @@
-import { DeepSeekAdapter } from "@/lib/ai/providers/deepseek"
+import { ArkAdapter } from "@/lib/ai/providers/ark"
 
 import { getMonitoringConfig } from "./config"
 import type {
@@ -7,24 +7,25 @@ import type {
   ProviderCallResult,
 } from "./provider"
 
-export class DeepSeekProvider implements MonitoringProvider {
+export class ArkProvider implements MonitoringProvider {
   async call({ prompt, model }: ProviderCallInput): Promise<ProviderCallResult> {
-    const adapter = new DeepSeekAdapter()
+    const adapter = new ArkAdapter()
     const config = getMonitoringConfig()
     const rawRequestJson = {
-      provider: "deepseek",
+      provider: "ark",
       model,
       prompt,
     }
     const result = await adapter.invoke({
       model,
       prompt,
+      temperature: 0.2,
       timeoutMs: config.timeoutMs,
       maxTokens: config.maxTokens,
     })
 
     return {
-      provider: "deepseek",
+      provider: "ark",
       model,
       output: result.text,
       durationMs: result.latencyMs ?? null,

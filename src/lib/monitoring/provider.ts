@@ -8,6 +8,12 @@ export type ProviderCallResult = {
   model: string
   output: string
   durationMs: number | null
+  httpStatus?: number | null
+  inputTokens?: number | null
+  outputTokens?: number | null
+  totalTokens?: number | null
+  rawRequestJson?: unknown
+  rawResponseJson?: unknown
 }
 
 export interface MonitoringProvider {

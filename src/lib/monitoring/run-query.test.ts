@@ -1,9 +1,16 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { runQuery } from "./run-query"
 
 describe("runQuery", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it("stores parsed output when the provider succeeds", async () => {
+    vi.stubEnv("MONITORING_PROVIDER", "openai")
+    vi.stubEnv("MONITORING_MODEL", "gpt-4o-mini")
+
     const provider = {
       call: vi.fn().mockResolvedValue({
         provider: "openai",
@@ -24,9 +31,18 @@ describe("runQuery", () => {
     expect(result.mentioned).toBe(true)
     expect(result.rank).toBe(1)
     expect(result.rawOutput).toContain("晟景装饰")
+    expect(provider.call).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "交城装修公司哪家靠谱？",
+      })
+    )
+    expect(provider.call.mock.calls[0]?.[0].prompt).not.toContain("晟景装饰")
   })
 
   it("returns a failed result when the provider throws", async () => {
+    vi.stubEnv("MONITORING_PROVIDER", "openai")
+    vi.stubEnv("MONITORING_MODEL", "gpt-4o-mini")
+
     const provider = {
       call: vi.fn().mockRejectedValue(new Error("provider-down")),
     }

@@ -1,5 +1,9 @@
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant, getTenantWithStats } from "@/lib/tenant"
+import {
+  buildBaselineConclusions,
+  calculateBaselineMetrics,
+} from "@/lib/monitoring/baseline-report"
 
 export function mapDashboardSnapshot({
   tenantName,
@@ -35,11 +39,25 @@ export function mapQueryMonitoringRows(
     queryRuns: Array<{
       id: string
       status: string
+      provider: string
+      model: string
       mentioned: boolean
       rank: number | null
       competitors: string[]
       errorMessage: string | null
+      rawOutput?: string | null
       createdAt: Date
+      analysis?: {
+        mentionStatus: string
+        rankType: string
+        brandMentioned: boolean
+        brandRank: number | null
+        visibilityScore: number
+        parserConfidence: number
+        competitorsJson: unknown
+        summary: string | null
+        impactLevel: string
+      } | null
     }>
     responses: Array<{
       id: string
@@ -69,7 +87,16 @@ export async function getMonitoringDashboardData() {
   const prisma = getPrisma()
   const manualStats = await getTenantWithStats()
 
-  const [queryCount, latestSnapshot, recentBatches, recentSnapshots, recentQueries] =
+  const [
+    queryCount,
+    latestSnapshot,
+    recentBatches,
+    recentSnapshots,
+    recentQueries,
+    latestBaselineBatch,
+    latestSuccessfulBatch,
+    latestNonEmptyBatch,
+  ] =
     await Promise.all([
       prisma.query.count({ where: { tenantId: tenant.id } }),
       prisma.insightSnapshot.findFirst({
@@ -101,6 +128,43 @@ export async function getMonitoringDashboardData() {
           },
         },
       }),
+      prisma.runBatch.findFirst({
+        where: { tenantId: tenant.id, source: "geo-content-center-seed" },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.runBatch.findFirst({
+        where: {
+          tenantId: tenant.id,
+          status: "SUCCESS",
+          queryRuns: { some: {} },
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          queryRuns: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              query: true,
+              analysis: true,
+            },
+          },
+        },
+      }),
+      prisma.runBatch.findFirst({
+        where: {
+          tenantId: tenant.id,
+          queryRuns: { some: {} },
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          queryRuns: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              query: true,
+              analysis: true,
+            },
+          },
+        },
+      }),
     ])
 
   const mapped = mapDashboardSnapshot({
@@ -127,6 +191,8 @@ export async function getMonitoringDashboardData() {
       ? mapped.lastRunAt.toLocaleString("zh-CN", { hour12: false })
       : "还没有自动运行记录",
     recentSnapshots,
+    latestBaselineBatch,
+    latestReportBatch: latestSuccessfulBatch ?? latestNonEmptyBatch,
     recentQueries: recentQueries.map((query) => ({
       id: query.id,
       text: query.text,
@@ -146,6 +212,7 @@ export async function getQueryMonitoringPageData() {
       queryRuns: {
         orderBy: { createdAt: "desc" },
         take: 5,
+        include: { analysis: true },
       },
       responses: {
         orderBy: { createdAt: "desc" },
@@ -157,5 +224,66 @@ export async function getQueryMonitoringPageData() {
   return {
     tenant,
     queries: mapQueryMonitoringRows(queries),
+  }
+}
+
+export async function getBatchReportPageData(batchId: string) {
+  const tenant = await getOrCreateTenant()
+  const prisma = getPrisma()
+  const batch = await prisma.runBatch.findFirst({
+    where: { id: batchId, tenantId: tenant.id },
+    include: {
+      snapshot: true,
+      queryRuns: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          query: true,
+          analysis: true,
+        },
+      },
+    },
+  })
+
+  if (!batch) return null
+
+  const brandProfile = await prisma.brandProfile.findUnique({
+    where: { tenantId: tenant.id },
+  })
+  const metrics = calculateBaselineMetrics(batch.queryRuns)
+
+  return {
+    tenant,
+    brandProfile,
+    batch,
+    metrics,
+    conclusions: buildBaselineConclusions(batch.queryRuns),
+  }
+}
+
+export async function getRunDetailPageData(runId: string) {
+  const tenant = await getOrCreateTenant()
+  const prisma = getPrisma()
+  const run = await prisma.queryRun.findFirst({
+    where: {
+      id: runId,
+      query: { tenantId: tenant.id },
+    },
+    include: {
+      query: true,
+      analysis: true,
+      providerAttempts: { orderBy: { createdAt: "asc" } },
+    },
+  })
+
+  if (!run) return null
+
+  const brandProfile = await prisma.brandProfile.findUnique({
+    where: { tenantId: tenant.id },
+  })
+
+  return {
+    tenant,
+    brandProfile,
+    run,
   }
 }

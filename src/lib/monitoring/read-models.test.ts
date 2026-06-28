@@ -34,6 +34,8 @@ describe("mapQueryMonitoringRows", () => {
           {
             id: "run_1",
             status: "SUCCESS",
+            provider: "ark",
+            model: "doubao-seed-2-1-pro-260628",
             mentioned: true,
             rank: 1,
             competitors: [],
