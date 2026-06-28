@@ -18,18 +18,20 @@
 ## 本地启动
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 docker compose up -d postgres
-npm install
-npm run prisma:migrate
-npm run dev
+pnpm install
+pnpm prisma:migrate
+PORT=3001 pnpm dev
 ```
 
 访问：
 
 ```text
-http://localhost:3000
+http://localhost:3001
 ```
+
+本地数据库使用 Docker Postgres。复制 `.env.example` 后，把 `DATABASE_URL` 里的用户名和密码改成你本地 Docker Postgres 的值；默认 compose 配置使用 `POSTGRES_USER` / `POSTGRES_PASSWORD`。
 
 ## Automated Monitoring (V3 Phase 1)
 
@@ -38,9 +40,12 @@ http://localhost:3000
 需要补充这些环境变量：
 
 ```text
-OPENAI_API_KEY=
-MONITORING_MODEL=gpt-4o-mini
-MONITORING_CRON_SECRET=
+MONITORING_PROVIDER=ark
+ARK_API_KEY=__YOUR_ARK_API_KEY__
+ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+MONITORING_MODEL=doubao-seed-2-1-pro-260628
+CRON_SECRET=__CHANGE_ME_RANDOM_STRING__
+MONITORING_CRON_SECRET=__CHANGE_ME_RANDOM_STRING__
 ```
 
 本地验证流程：
@@ -53,8 +58,10 @@ MONITORING_CRON_SECRET=
 Vercel Cron 当前使用：
 
 - route：`/api/internal/monitoring/run`
-- header：`x-monitoring-cron-secret`
-- schedule：`0 */12 * * *`
+- method：`GET`
+- auth：`Authorization: Bearer $CRON_SECRET`
+- local fallback header：`x-monitoring-cron-secret`
+- schedule：`0 6 * * *`
 
 这层调度只是入口，真正的监测逻辑放在共享服务里，后续可以迁到 ECS worker。
 

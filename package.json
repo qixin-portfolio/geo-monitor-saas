@@ -11,8 +11,11 @@
     "prisma:deploy": "prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:unit": "vitest run --exclude '**/*.integration.test.*' --exclude '**/*.int.test.*'",
+    "test:integration": "vitest run '**/*.integration.test.*' '**/*.int.test.*'"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.7",

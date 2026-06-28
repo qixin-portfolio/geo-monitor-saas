@@ -1,8 +1,11 @@
-import "dotenv/config"
+import { config } from "dotenv"
 import { defineConfig } from "prisma/config"
 
+config({ path: ".env.local" })
+config({ path: ".env" })
+
 const fallbackDatabaseUrl =
-  "postgresql://preview:preview@127.0.0.1:5432/preview"
+  "postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder"
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
