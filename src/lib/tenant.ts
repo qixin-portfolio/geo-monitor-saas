@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/prisma"
+import { hasUsableClerkKey } from "@/lib/clerk-config"
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -6,12 +7,37 @@ const DEV_USER_ID = "dev-user-local"
 
 async function devGetOrCreateTenant() {
   const prisma = getPrisma()
+
+  // Development-only fallback: prefer the tenant that owns the newest real
+  // monitoring run so local demos show existing data. This must never be used
+  // in production tenant resolution.
+  // Keep this as simple lookups to avoid nested relation-filter issues in dev.
+  const latestRun = await prisma.queryRun.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { queryId: true },
+  })
+  if (latestRun) {
+    const query = await prisma.query.findUnique({
+      where: { id: latestRun.queryId },
+      select: { tenantId: true },
+    })
+
+    if (query) {
+      const tenantWithData = await prisma.tenant.findUnique({
+        where: { id: query.tenantId },
+      })
+      if (tenantWithData) return tenantWithData
+    }
+  }
+
+  // Fallback: try the dev-user-local tenant.
   const existingUser = await prisma.user.findUnique({
     where: { clerkUserId: DEV_USER_ID },
     include: { tenant: true },
   })
   if (existingUser?.tenant) return existingUser.tenant
 
+  // Last resort: create a new empty dev tenant.
   return prisma.tenant.create({
     data: {
       name: "开发企业空间",
@@ -27,12 +53,10 @@ async function devGetOrCreateTenant() {
   })
 }
 
-export async function getOrCreateTenant() {
-  if (isDev) return devGetOrCreateTenant()
-
+async function getClerkTenant() {
   const { auth, currentUser } = await import("@clerk/nextjs/server")
-  let { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  const { userId } = await auth()
+  if (!userId) return null
 
   const prisma = getPrisma()
   const existingUser = await prisma.user.findUnique({
@@ -45,6 +69,8 @@ export async function getOrCreateTenant() {
   const clerkEmail = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null
   const clerkName = clerkUser?.fullName ?? clerkUser?.firstName ?? null
 
+  // First login onboarding: create a tenant tied to the authenticated Clerk user.
+  // This is production-safe because it is keyed by Clerk userId, not by demo data.
   return prisma.tenant.create({
     data: {
       name: clerkName ? `${clerkName} 的企业空间` : "我的企业空间",
@@ -58,6 +84,24 @@ export async function getOrCreateTenant() {
       },
     },
   })
+}
+
+export async function getOrCreateTenant() {
+  // Production path: resolve tenant only through Clerk userId -> User -> Tenant.
+  // If Clerk is unavailable or the user is not authenticated, do not fall back
+  // to any monitoring-run tenant outside development.
+  if (hasUsableClerkKey()) {
+    try {
+      const clerkTenant = await getClerkTenant()
+      if (clerkTenant) return clerkTenant
+    } catch (error) {
+      if (!isDev) throw error
+    }
+  }
+
+  if (isDev) return devGetOrCreateTenant()
+
+  throw new Error("Unauthorized")
 }
 
 export async function getTenantWithStats() {

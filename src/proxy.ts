@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 import { hasUsableClerkKey } from "@/lib/clerk-config"
+
 const isDev = process.env.NODE_ENV === "development"
 
 const isProtectedRoute = createRouteMatcher([
@@ -9,6 +10,8 @@ const isProtectedRoute = createRouteMatcher([
   "/api/queries(.*)",
   "/api/responses(.*)",
   "/api/tenant(.*)",
+  "/api/monitoring(.*)",
+  "/api/report(.*)",
   "/api/stripe(.*)",
 ])
 
@@ -22,7 +25,7 @@ export default function proxy(
   req: Parameters<typeof protectedProxy>[0],
   event: Parameters<typeof protectedProxy>[1]
 ) {
-  // Dev mode: bypass all auth for local testing
+  // Development-only bypass for local demos. Production must go through Clerk.
   if (isDev) return NextResponse.next()
   if (!hasUsableClerkKey()) return NextResponse.next()
   if (!isProtectedRoute(req)) return NextResponse.next()
