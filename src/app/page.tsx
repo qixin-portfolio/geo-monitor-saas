@@ -29,8 +29,27 @@ const features = [
   },
 ]
 
-export default function HomePage() {
+async function isSignedIn() {
+  if (!hasUsableClerkKey()) return false
+
+  try {
+    const { auth } = await import("@clerk/nextjs/server")
+    const { userId } = await auth()
+    return Boolean(userId)
+  } catch {
+    return false
+  }
+}
+
+export default async function HomePage() {
   const hasClerk = hasUsableClerkKey()
+  const signedIn = await isSignedIn()
+  const primaryHref = hasClerk ? (signedIn ? "/dashboard" : "/sign-up") : "/pricing"
+  const primaryLabel = hasClerk
+    ? signedIn
+      ? "进入控制台"
+      : "开始免费试用"
+    : "查看演示版"
 
   return (
     <main className="min-h-screen bg-background">
@@ -46,8 +65,8 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
-            <Link href={hasClerk ? "/sign-up" : "/pricing"}>
-              {hasClerk ? "开始免费试用" : "查看演示版"}{" "}
+            <Link href={primaryHref}>
+              {primaryLabel}{" "}
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>

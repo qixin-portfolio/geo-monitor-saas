@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { ClerkProvider, SignIn } from "@clerk/nextjs"
+import { Loader2 } from "lucide-react"
 
 import { hasUsableClerkKey } from "@/lib/clerk-config"
 
@@ -9,10 +10,19 @@ export default function SignInPage() {
   }
 
   return (
-    <ClerkProvider>
-      <main className="flex min-h-screen items-center justify-center bg-background px-6">
-        <SignIn />
-      </main>
-    </ClerkProvider>
+    <main className="relative flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+      <ClerkProvider>
+        <div className="relative z-10">
+          <SignIn
+            fallbackRedirectUrl="/dashboard"
+            forceRedirectUrl="/dashboard"
+            signUpFallbackRedirectUrl="/dashboard"
+          />
+        </div>
+      </ClerkProvider>
+    </main>
   )
 }
