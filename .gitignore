@@ -23,6 +23,10 @@
 # misc
 .DS_Store
 *.pem
+/.pnpm-store/
+/exports/
+/prisma/dev.db
+/codex-recovery/
 
 # debug
 npm-debug.log*
