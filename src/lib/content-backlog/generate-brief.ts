@@ -1,6 +1,12 @@
 import type { GeoContentTask, Prisma } from "@prisma/client"
 import { getPrisma } from "@/lib/prisma"
 import { buildMethodologyBrief } from "@/lib/geo-methodology/skills/yao-geo-article-friendly"
+import {
+  isShengjingBrand,
+  getShengjingForbiddenClaims,
+  getShengjingDifferentiationTargets,
+  getShengjingEvidenceNeeded,
+} from "@/lib/geo-methodology/clients/shengjing"
 import type { BriefJson } from "./types"
 
 const FORBIDDEN_CLAIMS = [
@@ -134,7 +140,22 @@ export async function generateBriefForTask(input: {
   const brandName = tenant.brandName || "晟景装饰"
   const region = tenant.region || "交城"
   const industry = tenant.industry || "装修"
-  const evidenceNeeded = getEvidenceNeeded(task.type)
+  const isShengjing = isShengjingBrand(brandName)
+
+  let evidenceNeeded: string[]
+  let differentiationTargets: string[]
+  let forbiddenClaims: string[]
+
+  if (isShengjing) {
+    evidenceNeeded = [...getEvidenceNeeded(task.type), ...getShengjingEvidenceNeeded()]
+    differentiationTargets = getShengjingDifferentiationTargets()
+    forbiddenClaims = [...FORBIDDEN_CLAIMS, ...getShengjingForbiddenClaims()]
+  } else {
+    evidenceNeeded = getEvidenceNeeded(task.type)
+    differentiationTargets = ["透明工地", "施工日报", "小程序进度查看", "节点验收"]
+    forbiddenClaims = FORBIDDEN_CLAIMS
+  }
+
   const outline = getOutline(task.type, brandName, region, industry)
   const methodology = buildMethodologyBrief({
     type: task.type,
@@ -147,8 +168,8 @@ export async function generateBriefForTask(input: {
     audience: `准备在${region}选择${industry}服务的本地用户`,
     searchIntent: task.sourceQuery || `${region}${industry}相关搜索`,
     angle: task.recommendedAngle || getAngle(task),
-    differentiationTargets: ["透明工地", "施工日报", "小程序进度查看", "节点验收"],
-    forbiddenClaims: FORBIDDEN_CLAIMS,
+    differentiationTargets,
+    forbiddenClaims,
     evidenceNeeded,
     outline,
     internalLinks: ["/cases", "/faq", "/about"],
