@@ -1,36 +1,31 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { clerkMiddleware } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 import { hasUsableClerkKey } from "@/lib/clerk-config"
 
 const isDev = process.env.NODE_ENV === "development"
 
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/api/queries(.*)",
-  "/api/responses(.*)",
-  "/api/tenant(.*)",
-  "/api/monitoring(.*)",
-  "/api/report(.*)",
-  "/api/stripe(.*)",
-])
-
-const protectedProxy = clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect()
-  }
-})
-
-export default function proxy(
-  req: Parameters<typeof protectedProxy>[0],
-  event: Parameters<typeof protectedProxy>[1]
-) {
-  // Development-only bypass for local demos. Production must go through Clerk.
+export default clerkMiddleware(async (auth, req) => {
+  // Development-only bypass for local demos.
   if (isDev) return NextResponse.next()
+  // Skip if Clerk keys are not configured (e.g., local dev without env).
   if (!hasUsableClerkKey()) return NextResponse.next()
-  if (!isProtectedRoute(req)) return NextResponse.next()
-  return protectedProxy(req, event)
-}
+
+  // Only protect dashboard and API routes that require authentication.
+  const url = req.nextUrl.pathname
+  const isProtected =
+    url.startsWith("/dashboard") ||
+    url.startsWith("/api/queries") ||
+    url.startsWith("/api/responses") ||
+    url.startsWith("/api/tenant") ||
+    url.startsWith("/api/monitoring") ||
+    url.startsWith("/api/report") ||
+    url.startsWith("/api/stripe")
+  if (!isProtected) return NextResponse.next()
+
+  // Clerk will redirect to /sign-in if the user is not authenticated.
+  await auth.protect()
+})
 
 export const config = {
   matcher: [
