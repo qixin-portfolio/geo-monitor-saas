@@ -25,7 +25,6 @@ ENV NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=${NEXT_PUBLIC_STRIPE_PRO_PRICE_ID}
 ENV NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID=${NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm add -D @types/pg 2>&1
 RUN pnpm build
 
 FROM ${BASE_IMAGE} AS runner
