@@ -1,43 +1,53 @@
-# AI 交接日志
+# AI 任务交接日志
 
-> **用途**：记录 AI 任务完成状态，供下一次 AI 任务或人工接手时快速了解上下文。
-> **维护方式**：每次 AI 任务完成后更新最近一条记录，保留历史记录。
+> 用途：让 ChatGPT、Codex 和用户通过仓库文件接力，不依赖聊天长报告。
+> 维护方式：每次任务结束后由 Codex 更新；重要结论同步到 PR 描述或 PR 评论。
 
 ---
 
-## 最近一次任务
+## 当前状态
 
 | 字段 | 内容 |
 |------|------|
-| 任务名称 | 优化 GEO Monitor 首页首屏定位与转化路径 |
-| 执行时间 | 2026-06-29 |
-| 执行分支 | codex/homepage-hero-positioning |
-| 结果 | ✅ 完成 |
+| 当前任务 | 初始化 ChatGPT + Codex + GitHub 协作机制 |
+| 执行分支 | `codex/init-ai-collaboration` |
+| 状态 | 待 PR 审查 |
+| GitHub 入口 | 本任务由用户直接发起，已通过分支和 PR 承接 |
+
+## 本轮交接
 
 ### 修改文件
-- src/app/page.tsx — 首页 Hero 区文案优化、新增平台展示行、特征卡片产品化、添加目标受众区段
 
-### 自测结果
-- npm run build：✅ 通过（Compiled 3.6s + TypeScript 3.7s，27 路由）
-- npm run typecheck：Next.js build 已内置 tsc 检查，通过
+- `AGENTS.md`：仓库级 Codex 执行规则。
+- `AI_TASKS/current.md`：当前任务单模板。
+- `AI_TASKS/handoff.md`：任务交接日志。
+- `AI_TASKS/PROTOCOL.md`：ChatGPT + Codex + GitHub 协作协议。
+- `AI_TASKS/LOOP_PROTOCOL.md`：循环工程执行协议。
+- `.github/ISSUE_TEMPLATE/ai-task.md`：AI 任务 Issue 模板。
+- `.github/PULL_REQUEST_TEMPLATE.md`：PR 交付报告模板。
 
-### 风险
-- 低风险
-- 仅修改 src/app/page.tsx 文案与布局，不涉及 API、数据库、认证、支付
-- 未添加新依赖
-- 未修改部署配置
-- 未接入真实密钥
-- 未修改已有 SEO / GEO 结构化内容
+### 验证记录
+
+- `git diff --check`：通过
+- 本任务只改文档，不运行 build。
+
+### 风险与注意事项
+
+- 本任务不修改业务代码。
+- 本任务不修改部署配置。
+- 本任务不涉及密钥、数据库、认证、支付。
+- 后续复杂任务应先创建 Issue，再由 Codex 开分支和 PR。
 
 ### 下一步建议
-1. PR 合入 main 后，可以在 Vercel Preview 中检查首页首屏在移动端的视觉效果
-2. 后续可以优化首页其余部分（数据说明、社交证明、FAQ 等），建议另开独立任务分支
+
+1. 合并本 PR 后，后续任务优先通过 GitHub Issue 发起。
+2. ChatGPT 审查时以 Issue / PR / handoff 为主上下文。
+3. 重复性任务进入 `AI_TASKS/LOOP_PROTOCOL.md` 定义的 Loop。
 
 ---
 
-## 历史记要
+## 历史记录
 
-| 时间 | 任务 | 结果 | 备注 |
-|------|------|------|------|
-| 2026-06-29 | 初始化 AI 协作工作流 | ✅ | chore: initialize AI collaboration workflow |
-| 2026-06-29 | 优化首页首屏定位与转化路径 | ✅ | 优化 Hero、平台行、特征卡片、目标受众段 |
+| 时间 | 任务 | 分支 / PR | 结果 | 备注 |
+|------|------|-----------|------|------|
+| 2026-06-29 | 初始化 AI 协作工作流 | `codex/init-ai-collaboration` | 待 PR 审查 | 只改协作文档 |
