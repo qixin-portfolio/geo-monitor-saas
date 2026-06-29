@@ -44,3 +44,14 @@
  4. **自测结果**：命令输出摘要（通过/失败，失败则贴关键错误）
  5. **风险**：本次改动可能影响的范围或隐患
  6. **下一步建议**：合理的后续动作
+
+ ## 4. GitHub 协作协议
+
+ - Codex 每次执行任务前必须读取 `AI_TASKS/PROTOCOL.md`
+ - Codex 必须优先从 GitHub Issue 理解任务
+ - Codex 不得只在聊天里交付结果
+ - Codex 必须把交付结果写入 PR 描述和 PR 评论
+ - Codex 必须更新 `AI_TASKS/handoff.md`
+ - 用户不负责搬运长报告
+ - ChatGPT 审查入口是 GitHub Issue / PR / handoff，而不是 Codex 聊天记录
+ - 复杂任务必须先有 Issue，再有分支和 PR
