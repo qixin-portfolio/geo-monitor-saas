@@ -9,40 +9,44 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | 初始化 ChatGPT + Codex + GitHub 协作机制 |
-| 执行分支 | `codex/init-ai-collaboration` |
-| 状态 | 待 PR 审查 |
-| GitHub 入口 | 本任务由用户直接发起，已通过分支和 PR 承接 |
+| 当前任务 | Evidence Map MVP：AI 答案证据链页面 |
+| 执行分支 | `codex/evidence-map-mvp` |
+| 状态 | 待 PR 创建 |
+| GitHub 入口 | 本任务由用户直接发起，完成后创建 PR |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `AGENTS.md`：仓库级 Codex 执行规则。
-- `AI_TASKS/current.md`：当前任务单模板。
-- `AI_TASKS/handoff.md`：任务交接日志。
-- `AI_TASKS/PROTOCOL.md`：ChatGPT + Codex + GitHub 协作协议。
-- `AI_TASKS/LOOP_PROTOCOL.md`：循环工程执行协议。
-- `.github/ISSUE_TEMPLATE/ai-task.md`：AI 任务 Issue 模板。
-- `.github/PULL_REQUEST_TEMPLATE.md`：PR 交付报告模板。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：产品方向与 V1.1/V1.2/V1.3 范围。
+- `docs/loops/evidence-led-geo-loop.md`：Evidence-led GEO Loop 定义。
+- `docs/architecture/evidence-chain-data-model.md`：证据链概念模型。
+- `src/lib/evidence/extract-evidence-map.ts`：Evidence Map 启发式纯函数。
+- `src/app/dashboard/evidence-map/page.tsx`：只读 Evidence Map 页面。
+- `src/components/sidebar-nav.tsx`：新增证据链地图导航入口。
+- `AI_TASKS/current.md`：记录本轮任务。
+- `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `git diff --check`：通过
-- 本任务只改文档，不运行 build。
+- `pnpm install`：通过。
+- `pnpm typecheck`：通过。
+- `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
+- 待完成：`git diff --check`。
 
 ### 风险与注意事项
 
-- 本任务不修改业务代码。
-- 本任务不修改部署配置。
-- 本任务不涉及密钥、数据库、认证、支付。
-- 后续复杂任务应先创建 Issue，再由 Codex 开分支和 PR。
+- 本轮不修改 Prisma schema。
+- 本轮不生成 migration。
+- 本轮不运行生产迁移。
+- 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
+- Evidence extraction 目前是启发式推断，不能当成事实引用证明。
 
 ### 下一步建议
 
-1. 合并本 PR 后，后续任务优先通过 GitHub Issue 发起。
-2. ChatGPT 审查时以 Issue / PR / handoff 为主上下文。
-3. 重复性任务进入 `AI_TASKS/LOOP_PROTOCOL.md` 定义的 Loop。
+1. 下一轮把 evidence gap 映射到 RepairTask / Content Backlog。
+2. 从 `citationsJson` 和 URL 中提取更稳定的 AnswerSource。
+3. 做 batch 前后对比，验证页面修复后 AI 答案是否变化。
 
 ---
 
@@ -50,4 +54,5 @@
 
 | 时间 | 任务 | 分支 / PR | 结果 | 备注 |
 |------|------|-----------|------|------|
-| 2026-06-29 | 初始化 AI 协作工作流 | `codex/init-ai-collaboration` | 待 PR 审查 | 只改协作文档 |
+| 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
+| 2026-06-29 | Evidence Map MVP | `codex/evidence-map-mvp` | 待 PR 创建 | 文档 + 只读页面 + 纯函数 |
