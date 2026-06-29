@@ -23,8 +23,11 @@ export default clerkMiddleware(async (auth, req) => {
     url.startsWith("/api/stripe")
   if (!isProtected) return NextResponse.next()
 
-  // Clerk will redirect to /sign-in if the user is not authenticated.
-  await auth.protect()
+  // Check auth manually - avoid auth.protect() which throws and breaks Next.js 16 proxy.ts
+  const session = await auth()
+  if (!session?.userId) {
+    return NextResponse.redirect(new URL("/sign-in", req.url))
+  }
 })
 
 export const config = {
