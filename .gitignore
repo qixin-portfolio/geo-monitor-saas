@@ -43,3 +43,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# local site and migration script
+/geo-monitor-site/
+/scripts/merge-dev-monitoring-data.mjs
