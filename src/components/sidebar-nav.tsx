@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, ClipboardList, CreditCard, LayoutDashboard, Search } from "lucide-react"
+import { BarChart3, ClipboardList, CreditCard, LayoutDashboard, Network, Search } from "lucide-react"
 
 const links = [
   { href: "/dashboard", label: "总览", icon: LayoutDashboard },
   { href: "/dashboard/queries", label: "关键词监测", icon: Search },
+  { href: "/dashboard/evidence-map", label: "证据链地图", icon: Network },
   { href: "/dashboard/content-backlog", label: "GEO 修复任务", icon: ClipboardList },
   { href: "/dashboard/billing", label: "订阅账单", icon: CreditCard },
   { href: "/pricing", label: "套餐", icon: BarChart3 },

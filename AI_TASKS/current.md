@@ -7,26 +7,37 @@
 
 ## 任务名称
 
-待填写。
+Evidence Map MVP：AI 答案证据链页面
 
 ## GitHub 入口
 
 - Issue：待填写。
-- PR：待填写。
+- PR：待创建。
 
 ## 背景
 
-待填写：为什么要做，当前问题是什么，业务目标是什么。
+GEO Monitor 下一阶段从“AI 提及率监测工具”升级为“AI 答案证据链与页面修复建议系统”。
+本轮只做第一轮可验收切片：方案文档、Loop 文档、概念模型、纯函数和只读 Evidence Map 页面。
 
 ## 本次目标
 
-1. 待填写。
-2. 待填写。
-3. 待填写。
+1. 新增 Evidence-led GEO Monitor v1.1 产品方案文档。
+2. 新增 Evidence-led GEO Loop 执行文档。
+3. 新增 Evidence Chain 概念数据模型文档。
+4. 新增 Evidence extraction 纯函数。
+5. 新增 `/dashboard/evidence-map` 只读页面和导航入口。
+6. 基于现有 Query / QueryRun / QueryRunAnalysis 派生证据链表格。
 
 ## 修改范围
 
-- 待填写。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`
+- `docs/loops/evidence-led-geo-loop.md`
+- `docs/architecture/evidence-chain-data-model.md`
+- `src/lib/evidence/extract-evidence-map.ts`
+- `src/app/dashboard/evidence-map/page.tsx`
+- `src/components/sidebar-nav.tsx`
+- `AI_TASKS/current.md`
+- `AI_TASKS/handoff.md`
 
 ## 禁止事项
 
@@ -44,16 +55,21 @@
 - [ ] 已运行必要检查。
 - [ ] PR 描述已更新。
 - [ ] `AI_TASKS/handoff.md` 已更新。
+- [ ] `pnpm typecheck` 通过。
+- [ ] `pnpm build` 通过。
+- [ ] 不修改 Prisma schema。
+- [ ] 不生成 migration。
+- [ ] 不运行生产迁移。
 
 ## 是否需要 Loop
 
-- 判断：待填写。
-- 依据：如果任务重复性高、可验收、有价值，必须参考 `AI_TASKS/LOOP_PROTOCOL.md`。
+- 判断：需要。
+- 依据：本任务是 GEO 监测结果持续转证据链和修复建议的第一轮循环，具有重复性、可验收、有产品价值。
 
 ## 是否需要 Human Gate
 
-- 判断：待填写。
-- 原因：涉及部署、数据库、支付、认证、生产环境、删除数据、批量操作时必须由用户确认。
+- 判断：不需要额外 Human Gate。
+- 原因：本轮不部署、不改生产数据库、不改认证、支付、权限或环境变量；最终合并 PR 仍由用户决定。
 
 ## 交付格式
 
