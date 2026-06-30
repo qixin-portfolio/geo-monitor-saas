@@ -32,8 +32,9 @@
 5. 判断证据缺口。
 6. 生成页面级建议。
 7. 将 evidence gap 映射为 RepairTask draft。
-8. 未来对比上次 run 的答案变化。
-9. 未来与线索做弱归因匹配。
+8. 将 RepairTask draft 映射为 Content Backlog draft。
+9. 未来对比上次 run 的答案变化。
+10. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -41,6 +42,7 @@
 - Source Citation Map
 - Page Impact Recommendation
 - RepairTask draft
+- Content Backlog draft
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -57,6 +59,8 @@
 - `extractEvidenceMap` 单元测试通过。
 - AnswerSource draft 没有外部 API 调用。
 - RepairTask draft 不写入数据库。
+- Content Backlog draft 映射不写入数据库。
+- `mapRepairTaskToContentTask` 单元测试通过。
 - 不修改 `.env`。
 - 不写入真实 secret。
 - 不修改 Prisma schema。
@@ -69,6 +73,7 @@
 遇到以下情况必须停止：
 
 - 需要生产数据库迁移。
+- 需要把 RepairTask 直接写入生产任务池。
 - 需要真实密钥或外部付费 API。
 - 需要修改认证、支付、部署配置。
 - schema 影响过大。
@@ -78,5 +83,5 @@
 
 回滚方式：
 
-- 本轮改动集中在文档、纯函数、dashboard 只读页面和导航入口。
+- 本轮改动集中在文档、纯函数和 dashboard 只读页面。
 - 如需回滚，可 revert 对应 PR。
