@@ -11,7 +11,7 @@ RepairTask 接入 Content Backlog：证据缺口进入修复任务池
 
 ## GitHub 入口
 
-- Issue：待填写。
+- Issue：由 PR #8 承载任务边界与交付物，当前 Issue 编号待补录。
 - PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/8](https://github.com/qixin-portfolio/geo-monitor-saas/pull/8)
 - 分支：`codex/repair-task-backlog`
 - 实现 commit：`d87a88a`
