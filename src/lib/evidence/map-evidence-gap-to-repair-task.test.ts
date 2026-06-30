@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import type { EvidenceMapItem } from "./extract-evidence-map"
 import { mapEvidenceGapToRepairTask } from "./map-evidence-gap-to-repair-task"
+import { SAMPLE_COMPETITORS } from "./fixtures/real-run-samples"
 
 function item(overrides: Partial<EvidenceMapItem>): EvidenceMapItem {
   return {
-    query: "交城装修公司推荐",
+    query: "本地装修公司推荐",
     brandMentioned: false,
     competitorsMentioned: [],
     sourceTypes: ["unknown"],
@@ -23,7 +24,7 @@ describe("mapEvidenceGapToRepairTask", () => {
   it("maps competitor advantage to a competitor counter task", () => {
     const task = mapEvidenceGapToRepairTask(
       item({
-        competitorsMentioned: ["家装e站", "交换空间"],
+        competitorsMentioned: SAMPLE_COMPETITORS,
         evidenceGap: "competitor_evidence_advantage",
       })
     )
@@ -45,6 +46,19 @@ describe("mapEvidenceGapToRepairTask", () => {
         sourceTypes: ["official_site"],
         evidenceGap: "weak_brand_definition",
         priority: "P1",
+      })
+    )
+
+    expect(task.taskType).toBe("page_update")
+  })
+
+  it("does not propose schema fix when quality sources already exist", () => {
+    const task = mapEvidenceGapToRepairTask(
+      item({
+        brandMentioned: true,
+        sourceTypes: ["business_registry", "local_listing", "authority_media"],
+        evidenceGap: "no_major_gap",
+        priority: "P2",
       })
     )
 

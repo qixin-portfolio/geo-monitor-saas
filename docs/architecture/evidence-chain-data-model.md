@@ -24,6 +24,8 @@ AI 回答引用或被推断依赖的来源。
 
 - 已实现为 `AnswerSourceDraft`。
 - 从 `citationsJson`、`sourcesJson`、answer URL、summary URL 提取。
+- 已用脱敏 real-run samples 校准数组、字符串化 JSON、嵌套 sources、异常 JSON 和 URL 尾部标点的容错。
+- owned domain 会作为 `official_site` 的强信号，但不抓网页、不联网。
 - 不落库。
 - source type 仍由关键词和 URL 启发式推断。
 
@@ -48,6 +50,7 @@ AI 回答引用或被推断依赖的来源。
 
 - 不落库。
 - 由 `extractEvidenceMap` 纯函数派生。
+- 已校准品牌已提及但只有工商来源的弱定义判断：如果同时存在官网、本地列表或权威媒体，不再按“只有工商信息”处理。
 
 ## 3. OwnedPage
 
@@ -186,6 +189,7 @@ AI 回答引用或被推断依赖的来源。
 - 不调用 `prisma.geoContentTask.create`。
 - 不新增 API。
 - 不生成 migration。
+- 已校准 schema 修复建议：只有在依赖工商来源且缺少官网、本地列表、权威媒体时，才建议结构化修复。
 
 ## 8. 本轮实现范围
 
@@ -242,12 +246,29 @@ AI 回答引用或被推断依赖的来源。
 - 页面从现有 `QueryRun` 按 `queryId` 分组，取最近两次 run 派生对比。
 - 如果没有历史 run，返回 `overallChange = unknown` 并展示“暂无历史对比”。
 - 不保存前后对比结果，避免在规则未校准前固化误判。
+- 已新增脱敏样本覆盖改善、无变化、恶化三类前后 run，用于防止 `unknown` 被误判为改善。
 
-## 10. 何时考虑 Prisma schema
+## 10. Real-run Calibration Fixtures
+
+本轮新增脱敏样本夹具：
+
+- 路径：`src/lib/evidence/fixtures/real-run-samples.ts`
+- 样本不包含真实客户隐私、真实 secret、数据库连接串或完整 raw API response。
+- 样本只保留 query、answer、summary、citationsJson、sourcesJson、品牌名、竞品名、owned domain 等测试必要字段。
+- 样本覆盖品牌未提及、竞品提及、工商来源、官网/本地列表/权威媒体、字符串化 citations、异常 citations，以及同 query 前后改善/无变化/恶化。
+
+使用原则：
+
+- 仅用于单元测试和启发式规则校准。
+- 不作为生产数据导入。
+- 不作为真实经营结论。
+- 后续每轮加入新真实样本时，仍需先脱敏，再转成最小测试夹具。
+
+## 11. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
-- AnswerSource extraction 在至少 3-5 轮真实 run 中稳定。
+- AnswerSource extraction 在至少 3-5 轮脱敏真实 run 样本中稳定。
 - RepairTask draft 的类型和字段能覆盖 Content Backlog 场景。
 - EvidenceRunComparison 在多轮真实 monitoring 中能稳定识别改善/恶化。
 - 页面修复建议能被用户确认有实际执行价值。

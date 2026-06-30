@@ -337,7 +337,7 @@ export default async function EvidenceMapPage() {
         <div>
           <h1 className="text-3xl font-semibold">AI 答案证据链</h1>
           <p className="mt-2 max-w-3xl text-muted-foreground">
-            看清楚哪些问题没提到你、AI 信了哪些来源、你该优先改哪一页。
+            看清楚哪些问题没提到你、AI 信了哪些来源、系统推断你该优先改哪一页。
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             品牌：{tenant.brandName ?? "未设置品牌"} · 企业空间：{tenant.name}
@@ -365,7 +365,7 @@ export default async function EvidenceMapPage() {
           <div>
             <h2 className="text-lg font-semibold">答案变化趋势</h2>
             <p className="text-sm text-muted-foreground">
-              基于同一个 Query 最近两次 Monitoring 的 Evidence Map 结果对比。
+              基于同一个 Query 最近两次 Monitoring 的系统推断结果对比；数据不足表示样本还不够，不代表修复失败。
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-4">
@@ -417,7 +417,7 @@ export default async function EvidenceMapPage() {
           <CardHeader>
             <CardTitle>Query Evidence Table</CardTitle>
             <CardDescription>
-              基于每个 Query 最近一次监测结果派生，当前为启发式分析。
+              基于每个 Query 最近一次监测结果派生，当前为启发式系统推断，不写入数据库。
             </CardDescription>
           </CardHeader>
           <CardContent>

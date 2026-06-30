@@ -31,9 +31,13 @@ function isSentimentQuery(query: string) {
 }
 
 function sourceNeedsSchemaFix(item: EvidenceMapItem) {
+  const hasQualitySource = item.sourceTypes.some((sourceType) =>
+    ["official_site", "local_listing", "authority_media"].includes(sourceType)
+  )
+
   return (
     item.sourceTypes.includes("business_registry") &&
-    !item.sourceTypes.includes("official_site")
+    !hasQualitySource
   )
 }
 
