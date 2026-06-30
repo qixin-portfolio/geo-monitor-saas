@@ -12,11 +12,11 @@ RepairTask Create Button Safety Design：创建单条修复任务能力安全设
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/13](https://github.com/qixin-portfolio/geo-monitor-saas/pull/13)
 - 分支：`codex/repair-task-create-design`
 - 基线：远端 `main`，已包含 PR #12。
-- 实现 commit：待提交。
-- 当前状态：验证已通过，等待提交和创建 PR。
+- 实现 commit：`3fdb2f54bf1dcfb5294486aad39fd03751dd9b2d`
+- 当前状态：PR 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -75,8 +75,8 @@ PR #12 已进入 main，Evidence Detail Drawer 已能展示每条 query 的 Repa
 - [x] 不接入数据库写入。
 - [x] 不新增真实按钮。
 - [x] 不自动部署。
-- [ ] PR 描述已更新。
-- [ ] `AI_TASKS/handoff.md` 已更新。
+- [x] PR 描述已更新。
+- [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
