@@ -12,10 +12,11 @@ Evidence Confidence Label：证据链置信度标签
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/11](https://github.com/qixin-portfolio/geo-monitor-saas/pull/11)
 - 分支：`codex/evidence-confidence-label`
 - 基线：远端 `main`，已包含 PR #10。
-- 当前状态：验证通过，等待提交并创建 PR。
+- 实现 commit：`5e7e97db447bc545f104887dd17e4ddfe6a3531a`
+- 当前状态：PR 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -72,7 +73,7 @@ PR #10 已进入 main，Evidence Map / AnswerSource / RepairTask / Run Compariso
 - [x] 不修改 env。
 - [x] 不接入数据库写入。
 - [x] 不自动部署。
-- [ ] PR 描述已更新。
+- [x] PR 描述已更新。
 - [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
