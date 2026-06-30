@@ -9,8 +9,8 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Evidence Map MVP：AI 答案证据链页面 |
-| 执行分支 | `codex/evidence-map-mvp` |
+| 当前任务 | Evidence Chain Hardening：证据链数据质量加固 |
+| 执行分支 | `codex/evidence-chain-hardening` |
 | 状态 | 待 PR 创建 |
 | GitHub 入口 | 本任务由用户直接发起，完成后创建 PR |
 
@@ -18,18 +18,23 @@
 
 ### 修改文件
 
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：产品方向与 V1.1/V1.2/V1.3 范围。
-- `docs/loops/evidence-led-geo-loop.md`：Evidence-led GEO Loop 定义。
-- `docs/architecture/evidence-chain-data-model.md`：证据链概念模型。
-- `src/lib/evidence/extract-evidence-map.ts`：Evidence Map 启发式纯函数。
-- `src/app/dashboard/evidence-map/page.tsx`：只读 Evidence Map 页面。
-- `src/components/sidebar-nav.tsx`：新增证据链地图导航入口。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：补充 hardening 范围和暂不落库原因。
+- `docs/loops/evidence-led-geo-loop.md`：补充 AnswerSource / RepairTask draft 流程。
+- `docs/architecture/evidence-chain-data-model.md`：补充 draft 实现状态和 schema 判断条件。
+- `src/lib/evidence/extract-evidence-map.ts`：导出来源类型推断方法。
+- `src/lib/evidence/extract-evidence-map.test.ts`：补充 Evidence Map 规则测试。
+- `src/lib/evidence/extract-answer-sources.ts`：新增 AnswerSource draft 提取。
+- `src/lib/evidence/extract-answer-sources.test.ts`：补充 AnswerSource 测试。
+- `src/lib/evidence/map-evidence-gap-to-repair-task.ts`：新增 RepairTask draft 映射。
+- `src/lib/evidence/map-evidence-gap-to-repair-task.test.ts`：补充 RepairTask 映射测试。
+- `src/app/dashboard/evidence-map/page.tsx`：展示建议修复任务。
 - `AI_TASKS/current.md`：记录本轮任务。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `pnpm install`：通过。
+- `pnpm exec vitest run src/lib/evidence/extract-evidence-map.test.ts src/lib/evidence/extract-answer-sources.test.ts src/lib/evidence/map-evidence-gap-to-repair-task.test.ts`：通过，3 个文件 18 个测试。
+- `pnpm test:unit`：通过，14 个文件 45 个测试。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
 - 待完成：`git diff --check`。
@@ -40,13 +45,14 @@
 - 本轮不生成 migration。
 - 本轮不运行生产迁移。
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
-- Evidence extraction 目前是启发式推断，不能当成事实引用证明。
+- AnswerSource 和 RepairTask 仍是 derived draft，不落库。
+- Evidence extraction 仍是启发式推断，不能当成事实引用证明。
 
 ### 下一步建议
 
-1. 下一轮把 evidence gap 映射到 RepairTask / Content Backlog。
-2. 从 `citationsJson` 和 URL 中提取更稳定的 AnswerSource。
-3. 做 batch 前后对比，验证页面修复后 AI 答案是否变化。
+1. 下一轮把 RepairTask draft 映射到 Content Backlog。
+2. 做 batch 前后对比，验证页面修复后 AI 答案是否变化。
+3. 用真实 run 样本校准 AnswerSource sourceType 规则。
 
 ---
 
@@ -55,4 +61,5 @@
 | 时间 | 任务 | 分支 / PR | 结果 | 备注 |
 |------|------|-----------|------|------|
 | 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
-| 2026-06-29 | Evidence Map MVP | `codex/evidence-map-mvp` | 待 PR 创建 | 文档 + 只读页面 + 纯函数 |
+| 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
+| 2026-06-30 | Evidence Chain Hardening | `codex/evidence-chain-hardening` | 待 PR 创建 | 测试 + AnswerSource + RepairTask draft |

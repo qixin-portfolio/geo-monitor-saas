@@ -22,8 +22,10 @@ AI 回答引用或被推断依赖的来源。
 
 本轮状态：
 
+- 已实现为 `AnswerSourceDraft`。
+- 从 `citationsJson`、`sourcesJson`、answer URL、summary URL 提取。
 - 不落库。
-- 先从回答文本和 `QueryRunAnalysis.citationsJson` 推断 source type。
+- source type 仍由关键词和 URL 启发式推断。
 
 ## 2. EvidenceGap
 
@@ -143,6 +145,8 @@ AI 回答引用或被推断依赖的来源。
 本轮状态：
 
 - 不新增表。
+- 已实现为 `RepairTaskDraft`。
+- 由 EvidenceMapItem 派生，在 Evidence Map 页面只读展示。
 - 可在下一轮映射到现有 `GeoContentTask.evidenceJson` 或新增轻量 migration。
 
 ## 7. 本轮实现范围
@@ -154,6 +158,9 @@ AI 回答引用或被推断依赖的来源。
 - Evidence gap 推断。
 - Suggested page / action 推断。
 - `/dashboard/evidence-map` 只读展示。
+- AnswerSource draft 提取。
+- RepairTask draft 映射。
+- Evidence extraction 单元测试。
 
 未来实现：
 
@@ -162,3 +169,14 @@ AI 回答引用或被推断依赖的来源。
 - PageImpactScore 计算。
 - RepairTask 队列。
 - LeadEvent 弱归因。
+
+## 8. 何时考虑 Prisma schema
+
+满足以下条件后再考虑 schema：
+
+- AnswerSource extraction 在至少 3-5 轮真实 run 中稳定。
+- RepairTask draft 的类型和字段能覆盖 Content Backlog 场景。
+- 页面修复建议能被用户确认有实际执行价值。
+- 需要跨 batch 保存来源和修复任务历史。
+
+在此之前，继续使用 derived data，避免过早迁移。

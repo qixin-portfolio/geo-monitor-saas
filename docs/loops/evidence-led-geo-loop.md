@@ -28,10 +28,10 @@
 1. 判断 AI 回答是否提及本品牌。
 2. 提取竞品提及。
 3. 提取或推断引用来源类型。
-4. 判断证据缺口。
-5. 生成页面级建议。
-6. 生成修复优先级。
-7. 未来生成 Repair Tasks。
+4. 从 `citationsJson`、URL、answer、summary 中提取 AnswerSource draft。
+5. 判断证据缺口。
+6. 生成页面级建议。
+7. 将 evidence gap 映射为 RepairTask draft。
 8. 未来对比上次 run 的答案变化。
 9. 未来与线索做弱归因匹配。
 
@@ -40,7 +40,7 @@
 - Evidence Map
 - Source Citation Map
 - Page Impact Recommendation
-- Repair Tasks，未来
+- RepairTask draft
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -54,6 +54,9 @@
 - `/dashboard/evidence-map` 页面存在。
 - 空数据时页面不崩。
 - 有 QueryRun 数据时可展示 Evidence Map 雏形。
+- `extractEvidenceMap` 单元测试通过。
+- AnswerSource draft 没有外部 API 调用。
+- RepairTask draft 不写入数据库。
 - 不修改 `.env`。
 - 不写入真实 secret。
 - 不修改 Prisma schema。

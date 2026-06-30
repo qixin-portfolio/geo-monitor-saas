@@ -26,6 +26,14 @@ import {
   type EvidenceSourceType,
   extractEvidenceMap,
 } from "@/lib/evidence/extract-evidence-map"
+import {
+  type AnswerSourceDraft,
+  extractAnswerSources,
+} from "@/lib/evidence/extract-answer-sources"
+import {
+  type RepairTaskDraft,
+  mapEvidenceGapToRepairTask,
+} from "@/lib/evidence/map-evidence-gap-to-repair-task"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
 
@@ -37,6 +45,8 @@ type EvidenceMapRow = EvidenceMapItem & {
   runId: string
   intentType: string
   runCreatedAt: Date
+  answerSources: AnswerSourceDraft[]
+  repairTask: RepairTaskDraft
 }
 
 const sourceTypeLabels: Record<EvidenceSourceType, string> = {
@@ -66,6 +76,18 @@ const intentLabels: Record<string, string> = {
   BUDGET: "预算",
   SELECTION_GUIDE: "选择攻略",
   OTHER: "其他",
+}
+
+const repairTaskTypeLabels: Record<RepairTaskDraft["taskType"], string> = {
+  page_update: "页面更新",
+  new_page: "新建页面",
+  faq_addition: "FAQ 补充",
+  schema_fix: "结构化修复",
+  third_party_profile: "第三方资料",
+  review_collection: "评价收集",
+  authority_building: "权威背书",
+  sentiment_defense: "舆情防御",
+  competitor_counter: "竞品反制",
 }
 
 function isString(value: unknown): value is string {
@@ -136,6 +158,9 @@ async function getEvidenceMapPageData() {
       },
     }),
   ])
+  const brandProfile = await prisma.brandProfile.findUnique({
+    where: { tenantId: tenant.id },
+  })
 
   const latestByQuery = new Map<string, (typeof latestRuns)[number]>()
   for (const run of latestRuns) {
@@ -159,14 +184,33 @@ async function getEvidenceMapPageData() {
       brandName,
       competitors,
     })[0]
+    const answerSources = extractAnswerSources({
+      citationsJson: analysis?.citationsJson,
+      answer: run.rawOutput,
+      summary: analysis?.summary,
+      ownedDomains: [brandProfile?.siteUrl ?? ""],
+      competitorNames: competitors,
+    })
+    const sourceTypes = Array.from(
+      new Set<EvidenceSourceType>([
+        ...item.sourceTypes,
+        ...answerSources.map((source) => source.sourceType),
+      ])
+    )
+    const evidenceItem = {
+      ...item,
+      sourceTypes,
+    }
 
     return {
-      ...item,
+      ...evidenceItem,
       id: run.id,
       queryId: run.queryId,
       runId: run.id,
       intentType: run.query.intentType,
       runCreatedAt: run.createdAt,
+      answerSources,
+      repairTask: mapEvidenceGapToRepairTask(evidenceItem),
     }
   })
 
@@ -276,6 +320,7 @@ export default async function EvidenceMapPage() {
                   <TableHead>来源类型</TableHead>
                   <TableHead>证据缺口</TableHead>
                   <TableHead>建议页面</TableHead>
+                  <TableHead>建议修复任务</TableHead>
                   <TableHead>优先级</TableHead>
                   <TableHead>原因</TableHead>
                 </TableRow>
@@ -330,6 +375,18 @@ export default async function EvidenceMapPage() {
                       <div className="font-medium">{row.suggestedPage}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {row.suggestedAction}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-[18rem] whitespace-normal">
+                      <Badge variant="outline">
+                        {repairTaskTypeLabels[row.repairTask.taskType]}
+                      </Badge>
+                      <div className="mt-2 font-medium">{row.repairTask.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        影响：{row.repairTask.expectedImpact}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        工作量：{row.repairTask.effortLevel}
                       </div>
                     </TableCell>
                     <TableCell>
