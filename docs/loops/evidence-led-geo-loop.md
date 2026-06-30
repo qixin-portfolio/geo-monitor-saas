@@ -37,7 +37,8 @@
 10. 用脱敏 real-run samples 回归测试启发式规则，减少误判。
 11. 给 Evidence Map / AnswerSource / RepairTask / Run Comparison 生成置信度标签。
 12. 在 Evidence Detail Drawer 中展示每条 query 的系统推断依据。
-13. 未来与线索做弱归因匹配。
+13. 为未来单条 RepairTask 创建能力执行安全设计审查。
+14. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -50,6 +51,8 @@
 - Real-run calibration fixtures
 - EvidenceConfidenceLabel
 - Evidence Detail Drawer
+- RepairTask create safety design
+- RepairTask draft validation result
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -77,6 +80,9 @@
 - 置信度标签不写入数据库，不作为事实归因。
 - Evidence Detail Drawer 能展示 Query 基本信息、品牌/竞品判断、来源判断、Evidence Gap、RepairTask Draft、Run Comparison 和 Confidence Label。
 - Evidence Detail Drawer 不写入数据库，不创建真实 RepairTask，不展示完整 raw API response。
+- RepairTask create safety design 明确权限校验、字段校验、幂等去重、审计字段和 UI 安全文案。
+- `validateRepairTaskDraft` 单元测试通过。
+- 本轮不接入真实数据库写入，不创建真实按钮。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。

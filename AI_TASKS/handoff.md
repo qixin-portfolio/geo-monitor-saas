@@ -9,32 +9,32 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Evidence Detail Drawer：证据详情抽屉 |
-| 执行分支 | `codex/evidence-detail-drawer` |
-| 状态 | 等待人工确认合并 |
-| GitHub 入口 | PR #12：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/12](https://github.com/qixin-portfolio/geo-monitor-saas/pull/12) |
-| 上一轮依赖 | PR #11 已合并到远端 main |
-| 实现 commit | `7665cd45a6b3614f1e21e8b522309bbe70cbc688` |
-| 当前 head commit | `64bfd84363d2546aabcdda8f8c2ff84e306097bd` |
+| 当前任务 | RepairTask Create Button Safety Design：创建单条修复任务能力安全设计 |
+| 执行分支 | `codex/repair-task-create-design` |
+| 状态 | 验证已通过，等待提交和创建 PR |
+| GitHub 入口 | PR 待创建 |
+| 上一轮依赖 | PR #12 已合并到远端 main |
+| 实现 commit | 待提交 |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `src/app/dashboard/evidence-map/page.tsx`：接入每条 query 的“查看详情”入口，把已存在的 derived data 传给详情抽屉。
-- `src/app/dashboard/evidence-map/evidence-detail-drawer.tsx`：新增轻量客户端详情抽屉，展示 Query 基本信息、品牌/竞品判断、来源判断、Evidence Gap、RepairTask Draft、Run Comparison 和 Confidence Label。
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 Evidence Detail Drawer 接入轮。
-- `docs/architecture/evidence-chain-data-model.md`：记录详情抽屉作为只读 UI 投影，不新增数据模型。
-- `docs/loops/evidence-led-geo-loop.md`：把详情抽屉纳入 Loop 过程、输出和验收。
+- `docs/architecture/repair-task-create-safety-design.md`：新增创建单条修复任务能力的安全设计，覆盖数据流、权限、字段校验、幂等、审计、UI 文案和不做事项。
+- `src/lib/evidence/validate-repair-task-draft.ts`：新增纯函数校验 Content Backlog draft，限制白名单、长度、raw response 和敏感字段。
+- `src/lib/evidence/validate-repair-task-draft.test.ts`：覆盖正常 draft、非法 taskType、过长字段、raw response、secret-like 字段、空 query fallback、nextSteps 限制。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 RepairTask 创建安全设计轮次。
+- `docs/architecture/evidence-chain-data-model.md`：记录未来写入链路如何复用 `GeoContentTask` 和本轮不落库边界。
+- `docs/loops/evidence-led-geo-loop.md`：把 RepairTask 创建安全设计纳入 Loop 过程、输出和验收。
 - `AI_TASKS/current.md`：记录本轮任务。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `pnpm exec vitest run src/lib/evidence/classify-evidence-confidence.test.ts src/lib/evidence/extract-answer-sources.test.ts src/lib/evidence/extract-evidence-map.test.ts src/lib/evidence/map-evidence-gap-to-repair-task.test.ts src/lib/evidence/map-repair-task-to-content-task.test.ts src/lib/evidence/compare-evidence-runs.test.ts`：通过，6 个文件 / 48 个测试。
-- `pnpm test:unit`：通过，17 个文件 / 75 个测试。
+- `pnpm exec vitest run src/lib/evidence/validate-repair-task-draft.test.ts`：通过，1 个文件 / 7 个测试。
+- `pnpm test:unit`：通过，18 个文件 / 82 个测试。
 - `pnpm typecheck`：通过。
-- `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
+- `pnpm build`：通过，包含 `/dashboard/evidence-map` 和 `/dashboard/content-backlog` 路由。
 - `git diff --check`：通过。
 
 ### 风险与注意事项
@@ -45,17 +45,16 @@
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
 - 本轮不自动部署。
 - 本轮不接入数据库写入。
+- 本轮不新增真实“加入修复任务池”按钮。
 - 本轮不做 Lead Attribution、PDF、全平台接入。
-- 本轮不创建真实数据库 RepairTask 按钮。
-- 详情抽屉是系统推断解释，不代表平台官方归因。
-- Evidence Map 页面仍是只读 derived data，不展示完整 raw API response。
+- `validateRepairTaskDraft` 只是未来 server action / API 的前置纯校验，不代表已经允许生产写库。
 
 ### 下一步建议
 
-1. 等待人工确认是否合并 PR #12。
-2. 合并前重点确认 drawer 是否只展示 derived data，是否误导用户把推断当事实。
-3. 下一轮若考虑“创建单条修复任务”按钮，必须单独审查 tenant 校验、字段校验、幂等去重和权限。
-4. Lead Attribution 仍应另开独立 Issue，等任务池稳定后再做。
+1. 完成 `test:unit` / `typecheck` / `build` / `git diff --check` 后创建 PR。
+2. 审查 PR 时重点看安全设计是否足以覆盖 tenant 越权、字段污染、敏感信息入库和重复创建。
+3. 下一轮如进入最小 server action / API，需要 Human Gate 确认是否允许真实写入 `GeoContentTask`。
+4. Lead Attribution 仍应另开独立 Issue，等任务池写入链路稳定后再做。
 
 ---
 
@@ -70,3 +69,4 @@
 | 2026-06-30 | Run Before/After Comparison | PR #9 | 已合并 | 同一 query 最近两次 AI 答案变化对比 |
 | 2026-06-30 | Real Run Calibration | PR #10 | 已合并 | 脱敏真实 run 样本校准 Evidence 规则 |
 | 2026-06-30 | Evidence Confidence Label | PR #11 | 已合并 | 证据链置信度标签 |
+| 2026-06-30 | Evidence Detail Drawer | PR #12 | 已合并 | 证据详情抽屉 |

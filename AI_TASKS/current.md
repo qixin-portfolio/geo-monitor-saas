@@ -7,33 +7,34 @@
 
 ## 任务名称
 
-Evidence Detail Drawer：证据详情抽屉
+RepairTask Create Button Safety Design：创建单条修复任务能力安全设计
 
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/12](https://github.com/qixin-portfolio/geo-monitor-saas/pull/12)
-- 分支：`codex/evidence-detail-drawer`
-- 基线：远端 `main`，已包含 PR #11。
-- 实现 commit：`7665cd45a6b3614f1e21e8b522309bbe70cbc688`
-- 当前状态：PR 已创建，等待人工审查与合并确认。
+- PR：待创建。
+- 分支：`codex/repair-task-create-design`
+- 基线：远端 `main`，已包含 PR #12。
+- 实现 commit：待提交。
+- 当前状态：验证已通过，等待提交和创建 PR。
 
 ## 背景
 
-PR #11 已进入 main，Evidence Map 已具备 Evidence Map / AnswerSource / RepairTask / Run Comparison / Confidence Label 等 derived data。
-本轮目标是在不新增数据库写入、不大改 UI 的前提下，为每条 query 增加一个轻量详情抽屉，让用户能看到系统为什么给出当前判断。
+PR #12 已进入 main，Evidence Detail Drawer 已能展示每条 query 的 RepairTask Draft 和 Content Backlog draft。
+下一步如果要让用户点击“加入修复任务池”，就会从只读 derived data 进入数据库写入边界。本轮只做安全设计和纯校验基建，不上线真实按钮。
 
 ## 本次目标
 
-1. 在 `/dashboard/evidence-map` 为每条 query 增加“查看详情”入口。
-2. 展示 Query 基本信息、品牌/竞品判断、来源判断、Evidence Gap、RepairTask Draft、Run Comparison 和 Confidence Label。
-3. 明确标注这些内容是系统推断和 derived data，不代表平台官方归因。
+1. 审查现有 Content Backlog / GeoContentTask / tenant / API 边界。
+2. 新增 `docs/architecture/repair-task-create-safety-design.md`。
+3. 新增 `validateRepairTaskDraft` 纯函数和单元测试，沉淀字段白名单、长度限制和敏感字段拒绝规则。
 4. 更新产品、架构、Loop 和 handoff 文档。
 
 ## 修改范围
 
-- `src/app/dashboard/evidence-map/page.tsx`
-- `src/app/dashboard/evidence-map/evidence-detail-drawer.tsx`
+- `docs/architecture/repair-task-create-safety-design.md`
+- `src/lib/evidence/validate-repair-task-draft.ts`
+- `src/lib/evidence/validate-repair-task-draft.test.ts`
 - `docs/product/evidence-led-geo-monitor-v1.1.md`
 - `docs/architecture/evidence-chain-data-model.md`
 - `docs/loops/evidence-led-geo-loop.md`
@@ -46,11 +47,11 @@ PR #11 已进入 main，Evidence Map 已具备 Evidence Map / AnswerSource / Rep
 - 不提交 `.env`、数据库连接串、账号密码。
 - 不自动合并 PR。
 - 不擅自修改生产部署、数据库、认证、支付配置。
+- 不做真实数据库写入。
+- 不上线创建 RepairTask 按钮。
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不做全平台接入。
-- 不创建真实数据库 RepairTask 按钮。
-- 不接数据库写入。
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不自动部署。
@@ -60,12 +61,11 @@ PR #11 已进入 main，Evidence Map 已具备 Evidence Map / AnswerSource / Rep
 ## 验收标准
 
 - [x] 修改范围符合任务说明。
-- [x] Evidence Detail Drawer 只读展示，不读写数据库、不调用外部 API。
-- [x] 页面不展示完整 raw API response。
-- [x] 页面不展示 secret、token、数据库连接串或客户隐私字段。
-- [x] 空数据、无历史 run、字段缺失时页面不崩。
-- [x] evidence 单文件组测试通过，6 个文件 / 48 个测试。
-- [x] `pnpm test:unit` 通过，17 个文件 / 75 个测试。
+- [x] 安全设计文档覆盖当前状态、未来数据流、权限校验、字段校验、幂等去重、审计字段、UI 文案和不做事项。
+- [x] `validateRepairTaskDraft` 是纯函数，不读库、不联网、不依赖浏览器。
+- [x] `validateRepairTaskDraft` 单元测试覆盖正常 draft、非法 taskType、过长字段、raw response、secret-like 字段、空 query fallback、nextSteps 限制。
+- [x] `pnpm exec vitest run src/lib/evidence/validate-repair-task-draft.test.ts` 通过，1 个文件 / 7 个测试。
+- [x] `pnpm test:unit` 通过，18 个文件 / 82 个测试。
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
@@ -73,19 +73,20 @@ PR #11 已进入 main，Evidence Map 已具备 Evidence Map / AnswerSource / Rep
 - [x] 不生成 migration。
 - [x] 不修改 env。
 - [x] 不接入数据库写入。
+- [x] 不新增真实按钮。
 - [x] 不自动部署。
-- [x] PR 描述已更新。
-- [x] `AI_TASKS/handoff.md` 已更新。
+- [ ] PR 描述已更新。
+- [ ] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
 - 判断：需要。
-- 依据：Evidence Detail Drawer 是证据链工作流的解释层，未来会随着 Evidence 规则、真实样本和 RepairTask 接入持续迭代，具备重复性、可验收和产品价值。
+- 依据：RepairTask 创建能力会反复触发数据库写入、权限校验、字段校验和幂等去重，属于高价值、可验收、需要长期沉淀的工程循环。
 
 ## 是否需要 Human Gate
 
-- 判断：不需要额外 Human Gate。
-- 原因：本轮不部署、不改生产数据库、不改认证、支付、权限或环境变量；不保存详情结果，不写 RepairTask。最终合并 PR 仍由用户决定。
+- 判断：需要在下一轮真实写库前进入 Human Gate。
+- 原因：本轮不写数据库、不上线按钮，因此不需要额外确认；但下一轮如果实现 server action / API 并写入 `GeoContentTask`，必须由用户确认后再继续。
 
 ## 交付格式
 
