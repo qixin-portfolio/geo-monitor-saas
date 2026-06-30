@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | RepairTask Validator Hardening：修复任务 draft 校验器加固 |
 | 执行分支 | `codex/repair-task-validator-hardening` |
-| 状态 | 实现与验证已完成，等待提交并创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #14：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/14](https://github.com/qixin-portfolio/geo-monitor-saas/pull/14) |
 | 上一轮依赖 | PR #13 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `e34de9ff1a3621ea2865317060dbe639cb8de77d` |
 
 ## 本轮交接
 
@@ -53,7 +53,7 @@
 
 ### 下一步建议
 
-1. 创建 PR 后等待人工审查。
+1. 等待人工审查 PR #14。
 2. 审查 PR 时重点看白名单输出是否彻底移除未知字段，非法 priority 是否不再 fallback。
 3. 下一轮如进入最小 server action / API，需要 Human Gate 确认是否允许真实写入 `GeoContentTask`。
 4. Lead Attribution 仍应另开独立 Issue，等任务池写入链路稳定后再做。
