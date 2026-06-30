@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | Run Before/After Comparison：同一 query 的 AI 答案前后变化 |
 | 执行分支 | `codex/run-before-after-comparison` |
-| 状态 | 验证通过，待提交并创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #9：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/9](https://github.com/qixin-portfolio/geo-monitor-saas/pull/9) |
 | 上一轮依赖 | PR #8 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `a2629f0` |
 
 ## 本轮交接
 
@@ -66,4 +66,4 @@
 | 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
 | 2026-06-30 | Evidence Chain Hardening | PR #7 | 已合并 | 测试 + AnswerSource + RepairTask draft |
 | 2026-06-30 | RepairTask 接入 Content Backlog | PR #8 | 已合并 | RepairTask draft 映射为 Content Backlog draft |
-| 2026-06-30 | Run Before/After Comparison | 待创建 | 进行中 | 同一 query 最近两次 AI 答案变化对比 |
+| 2026-06-30 | Run Before/After Comparison | PR #9 | 等待人工确认合并 | 同一 query 最近两次 AI 答案变化对比 |

@@ -12,10 +12,10 @@ Run Before/After Comparison：同一 query 的 AI 答案前后变化
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/9](https://github.com/qixin-portfolio/geo-monitor-saas/pull/9)
 - 分支：`codex/run-before-after-comparison`
-- 实现 commit：待提交。
-- 当前状态：验证通过，待提交并创建 PR。
+- 实现 commit：`a2629f0`
+- 当前状态：PR 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -70,7 +70,7 @@ PR #8 已进入远端 main。Evidence Map 页面已经能把 evidence gap 派生
 - [x] 不修改 env。
 - [x] 不接入数据库写入。
 - [x] 不自动部署。
-- [ ] PR 描述已更新。
+- [x] PR 描述已更新。
 - [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
