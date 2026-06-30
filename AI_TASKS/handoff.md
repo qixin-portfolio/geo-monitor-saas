@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | 真实 Monitoring 样本校准：Evidence Map / AnswerSource / RepairTask / Run Comparison |
 | 执行分支 | `codex/real-run-calibration` |
-| 状态 | 验证通过，等待提交并创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #10：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/10](https://github.com/qixin-portfolio/geo-monitor-saas/pull/10) |
 | 上一轮依赖 | PR #9 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `0e8c06d11de09cae128651bb2f52b3bf94645df9` |
 
 ## 本轮交接
 
