@@ -179,12 +179,32 @@ Evidence Detail Drawer 合并后，下一步不是直接上线“创建任务”
 
 本轮仍不创建真实按钮，不写数据库，不修改 Prisma schema，不生成 migration，不做 Lead Attribution。
 
+### RepairTask Validator Hardening 接入轮
+
+RepairTask Create Button Safety Design 合并后，本轮继续停在写库前的安全闸门，不进入按钮实现。
+
+本轮加固：
+
+- `validateRepairTaskDraft` 的 `sanitizedDraft` 改为显式白名单输出。
+- `evidenceJson` 和 `briefJson` 只保留未来写入 `GeoContentTask` 需要的明确字段。
+- 嵌套 `repairTask` 只保留 task type、priority、evidence gap、suggested page、expected impact、effort level 和 next steps。
+- raw response、prompt、token、secret、cookie、authorization 等字段会被拒绝，不进入 sanitized output。
+- Content Backlog 顶层 `priority` 只接受 RepairTask 映射产生的 `90`、`70`、`45`，非法值直接拒绝，不再静默 fallback。
+
+为什么继续不做按钮：
+
+- Validator 只能保证字段形状和敏感字段过滤，不能替代 server 端 tenant 校验。
+- 真正写库前仍需要幂等去重、权限校验、query/run 归属校验和审计字段确认。
+- 任何“加入修复任务池”按钮都会从 derived data 进入真实数据库写入，必须单独过 Human Gate。
+
+本轮仍不创建真实按钮，不写数据库，不新增 API route / server action，不修改 Prisma schema，不生成 migration，不做 Lead Attribution。
+
 ### V1.2
 
 - 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
 - 继续校准 Evidence Confidence Label 的阈值和文案，避免把弱推断包装成事实。
 - 观察 Evidence Detail Drawer 是否能帮助用户复核每条 query 的判断依据。
-- 基于安全设计评估是否进入“最小安全 server action”实现。
+- 基于安全设计和 hardened validator 评估是否进入“最小安全 server action”实现。
 - 给每条 evidence gap 生成明确 next steps。
 - 评估“创建修复任务”按钮是否具备登录、tenant 校验、字段校验和去重条件。
 

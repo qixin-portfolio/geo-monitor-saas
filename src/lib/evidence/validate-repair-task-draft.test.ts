@@ -66,6 +66,14 @@ describe("validateRepairTaskDraft", () => {
     expect(result.sanitizedDraft).toBeNull()
   })
 
+  it("rejects illegal top-level priority values", () => {
+    const result = validateRepairTaskDraft(draft({ priority: 50 }))
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContain("invalid priority：priority 不在白名单内")
+    expect(result.sanitizedDraft).toBeNull()
+  })
+
   it("truncates overlong title and description fields", () => {
     const result = validateRepairTaskDraft(
       draft({
@@ -92,12 +100,46 @@ describe("validateRepairTaskDraft", () => {
     expect(result.errors.join(" ")).toContain("raw response")
   })
 
+  it("rejects nested raw response fields", () => {
+    const result = validateRepairTaskDraft({
+      ...draft(),
+      evidenceJson: {
+        source: "evidence_map",
+        trigger: "missing_citable_brand_evidence",
+        repairTask: {
+          taskType: "new_page",
+          priority: "P0",
+          evidenceGap: "missing_citable_brand_evidence",
+          nested: {
+            fullResponse: "complete raw answer payload",
+          },
+        },
+      },
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.join(" ")).toContain("raw response")
+  })
+
   it("rejects secret-like fields and values", () => {
     const result = validateRepairTaskDraft({
       ...draft(),
       briefJson: {
         ...draft().briefJson,
         webhookSecret: "not-real-placeholder",
+      },
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.join(" ")).toContain("secret")
+  })
+
+  it("rejects secret-like fields inside evidenceJson", () => {
+    const result = validateRepairTaskDraft({
+      ...draft(),
+      evidenceJson: {
+        ...draft().evidenceJson,
+        apiKey: "not-real-placeholder",
       },
     })
 
@@ -139,5 +181,89 @@ describe("validateRepairTaskDraft", () => {
     expect(result.valid).toBe(true)
     expect(evidence.nextSteps).toHaveLength(6)
     expect(evidence.nextSteps?.every((step) => step.length <= 160)).toBe(true)
+  })
+
+  it("removes unknown evidenceJson and briefJson fields from sanitized output", () => {
+    const result = validateRepairTaskDraft({
+      ...draft(),
+      evidenceJson: {
+        ...draft().evidenceJson,
+        arbitraryLargeField: "x".repeat(500),
+        nestedUnknown: { anything: "should not pass" },
+        repairTask: {
+          taskType: "new_page",
+          priority: "P0",
+          evidenceGap: "missing_citable_brand_evidence",
+          suggestedPage: "品牌介绍页 / 本地服务页 / FAQ",
+          expectedImpact: "为后续 AI 答案提供稳定引用入口。",
+          effortLevel: "M",
+          nextSteps: ["补充真实案例。"],
+          unexpectedNested: { value: "drop me" },
+        },
+      },
+      briefJson: {
+        ...draft().briefJson,
+        arbitraryBriefField: "drop me",
+        nestedBriefUnknown: { value: "drop me too" },
+      },
+    })
+    const evidence = result.sanitizedDraft?.evidenceJson as Record<string, unknown>
+    const repairTask = evidence.repairTask as Record<string, unknown>
+    const brief = result.sanitizedDraft?.briefJson as Record<string, unknown>
+
+    expect(result.valid).toBe(true)
+    expect(evidence).not.toHaveProperty("arbitraryLargeField")
+    expect(evidence).not.toHaveProperty("nestedUnknown")
+    expect(repairTask).not.toHaveProperty("unexpectedNested")
+    expect(brief).not.toHaveProperty("arbitraryBriefField")
+    expect(brief).not.toHaveProperty("nestedBriefUnknown")
+  })
+
+  it("keeps sanitizedDraft limited to explicit top-level and nested whitelist fields", () => {
+    const result = validateRepairTaskDraft(draft())
+    const evidence = result.sanitizedDraft?.evidenceJson as Record<string, unknown>
+    const repairTask = evidence.repairTask as Record<string, unknown>
+    const brief = result.sanitizedDraft?.briefJson as Record<string, unknown>
+
+    expect(Object.keys(result.sanitizedDraft ?? {}).sort()).toEqual([
+      "briefJson",
+      "evidenceJson",
+      "priority",
+      "recommendedAngle",
+      "sourceQuery",
+      "sourceReason",
+      "targetAudience",
+      "targetKeyword",
+      "title",
+      "type",
+    ])
+    expect(Object.keys(evidence).sort()).toEqual([
+      "nextSteps",
+      "relatedQuery",
+      "repairTask",
+      "source",
+      "suggestedPage",
+      "trigger",
+    ])
+    expect(Object.keys(repairTask).sort()).toEqual([
+      "effortLevel",
+      "evidenceGap",
+      "expectedImpact",
+      "nextSteps",
+      "priority",
+      "suggestedPage",
+      "taskType",
+    ])
+    expect(Object.keys(brief).sort()).toEqual([
+      "angle",
+      "audience",
+      "differentiationTargets",
+      "evidenceNeeded",
+      "forbiddenClaims",
+      "internalLinks",
+      "llmsNotes",
+      "outline",
+      "searchIntent",
+    ])
   })
 })

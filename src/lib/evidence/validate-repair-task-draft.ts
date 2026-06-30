@@ -41,6 +41,7 @@ const ALLOWED_EVIDENCE_GAPS: EvidenceGap[] = [
 ]
 
 const ALLOWED_EVIDENCE_PRIORITIES: EvidencePriority[] = ["P0", "P1", "P2"]
+const ALLOWED_CONTENT_PRIORITIES = [90, 70, 45] as const
 
 const TITLE_MAX = 120
 const SHORT_TEXT_MAX = 160
@@ -51,6 +52,8 @@ const FALLBACK_QUERY = "待补充原始 query"
 
 const RAW_RESPONSE_KEYS = [
   "raw",
+  "rawAnswer",
+  "rawApiResponse",
   "rawOutput",
   "rawResponse",
   "rawResponseJson",
@@ -143,10 +146,12 @@ function sanitizeLong(value: unknown, fallback = "") {
   return truncate(asString(value, fallback), LONG_TEXT_MAX)
 }
 
-function sanitizePriority(value: unknown) {
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return 50
-  return Math.max(1, Math.min(100, Math.round(numeric)))
+function isAllowedContentPriority(value: unknown): value is typeof ALLOWED_CONTENT_PRIORITIES[number] {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    ALLOWED_CONTENT_PRIORITIES.includes(value as typeof ALLOWED_CONTENT_PRIORITIES[number])
+  )
 }
 
 function sanitizeStringArray(value: unknown) {
@@ -166,7 +171,7 @@ function sanitizeNextSteps(value: unknown) {
 }
 
 function sanitizeJsonObject(value: unknown): Prisma.InputJsonObject {
-  return isRecord(value) ? { ...value } as Prisma.InputJsonObject : {}
+  return isRecord(value) ? (value as Prisma.InputJsonObject) : {}
 }
 
 function repairTaskMetadata(value: Prisma.InputJsonObject): Record<string, unknown> {
@@ -193,19 +198,20 @@ function validateMetadata(evidenceJson: Prisma.InputJsonObject, errors: string[]
   }
 }
 
-function sanitizeEvidenceJson(value: Prisma.InputJsonObject): Prisma.InputJsonObject {
+function sanitizeEvidenceJson(
+  value: Prisma.InputJsonObject,
+  relatedQuery: string
+): Prisma.InputJsonObject {
   const repairTask = repairTaskMetadata(value)
   const nextSteps = sanitizeNextSteps(value.nextSteps ?? repairTask.nextSteps)
 
   return {
-    ...value,
     source: sanitizeShort(value.source, "evidence_map"),
     trigger: sanitizeShort(value.trigger),
-    relatedQuery: sanitizeShort(value.relatedQuery, FALLBACK_QUERY),
+    relatedQuery: sanitizeShort(value.relatedQuery, relatedQuery),
     suggestedPage: sanitizeShort(value.suggestedPage),
     nextSteps,
     repairTask: {
-      ...repairTask,
       taskType: sanitizeShort(repairTask.taskType),
       priority: sanitizeShort(repairTask.priority),
       evidenceGap: sanitizeShort(repairTask.evidenceGap ?? value.trigger),
@@ -217,11 +223,13 @@ function sanitizeEvidenceJson(value: Prisma.InputJsonObject): Prisma.InputJsonOb
   }
 }
 
-function sanitizeBriefJson(value: Prisma.InputJsonObject): Prisma.InputJsonObject {
+function sanitizeBriefJson(
+  value: Prisma.InputJsonObject,
+  relatedQuery: string
+): Prisma.InputJsonObject {
   return {
-    ...value,
     audience: sanitizeShort(value.audience),
-    searchIntent: sanitizeShort(value.searchIntent, FALLBACK_QUERY),
+    searchIntent: sanitizeShort(value.searchIntent, relatedQuery),
     angle: sanitizeShort(value.angle),
     differentiationTargets: sanitizeStringArray(value.differentiationTargets),
     forbiddenClaims: sanitizeStringArray(value.forbiddenClaims),
@@ -249,39 +257,52 @@ export function validateRepairTaskDraft(input: unknown): RepairTaskDraftValidati
   }
 
   const type = input.type
-  if (!ALLOWED_CONTENT_TYPES.includes(type as GeoContentTaskType)) {
+  const contentType = ALLOWED_CONTENT_TYPES.includes(type as GeoContentTaskType)
+    ? (type as GeoContentTaskType)
+    : null
+  const contentPriority = isAllowedContentPriority(input.priority)
+    ? input.priority
+    : null
+
+  if (!contentType) {
     errors.push("type 不在 GeoContentTaskType 白名单内")
+  }
+
+  if (contentPriority === null) {
+    errors.push("invalid priority：priority 不在白名单内")
   }
 
   const evidenceJson = sanitizeJsonObject(input.evidenceJson)
   const briefJson = sanitizeJsonObject(input.briefJson)
   validateMetadata(evidenceJson, errors)
 
+  if (errors.length > 0 || !contentType || contentPriority === null) {
+    return {
+      valid: false,
+      errors,
+      sanitizedDraft: null,
+    }
+  }
+
   const relatedQuery = sanitizeShort(input.sourceQuery, FALLBACK_QUERY)
-  const sanitizedEvidenceJson = sanitizeEvidenceJson({
-    ...evidenceJson,
-    relatedQuery: evidenceJson.relatedQuery ?? relatedQuery,
-  })
+  const sanitizedEvidenceJson = sanitizeEvidenceJson(evidenceJson, relatedQuery)
 
   const sanitizedDraft: ContentBacklogTaskDraft = {
     title: truncate(asString(input.title, "未命名修复任务"), TITLE_MAX),
-    type: type as GeoContentTaskType,
-    priority: sanitizePriority(input.priority),
+    type: contentType,
+    priority: contentPriority,
     sourceQuery: relatedQuery,
     sourceReason: sanitizeLong(input.sourceReason),
     targetKeyword: sanitizeShort(input.targetKeyword, relatedQuery),
     targetAudience: sanitizeShort(input.targetAudience, "负责官网、内容和 GEO 修复的运营/市场人员"),
     recommendedAngle: sanitizeLong(input.recommendedAngle),
     evidenceJson: sanitizedEvidenceJson,
-    briefJson: sanitizeBriefJson({
-      ...briefJson,
-      searchIntent: briefJson.searchIntent ?? relatedQuery,
-    }),
+    briefJson: sanitizeBriefJson(briefJson, relatedQuery),
   }
 
   return {
-    valid: errors.length === 0,
-    errors,
-    sanitizedDraft: errors.length === 0 ? sanitizedDraft : null,
+    valid: true,
+    errors: [],
+    sanitizedDraft,
   }
 }
