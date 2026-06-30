@@ -44,6 +44,11 @@ import {
   type EvidenceRunComparison,
   compareEvidenceRuns,
 } from "@/lib/evidence/compare-evidence-runs"
+import {
+  type EvidenceConfidenceLabel,
+  type EvidenceConfidenceLevel,
+  classifyEvidenceConfidence,
+} from "@/lib/evidence/classify-evidence-confidence"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
 
@@ -61,6 +66,7 @@ type EvidenceMapRow = EvidenceMapItem & {
   previousRunId: string | null
   previousRunCreatedAt: Date | null
   comparison: EvidenceRunComparison
+  confidenceLabel: EvidenceConfidenceLabel
 }
 
 const sourceTypeLabels: Record<EvidenceSourceType, string> = {
@@ -130,6 +136,12 @@ const brandMentionChangeLabels: Record<BrandMentionChange, string> = {
   unknown: "数据不足",
 }
 
+const confidenceLevelLabels: Record<EvidenceConfidenceLevel, string> = {
+  high: "高置信命中",
+  medium: "中置信推断",
+  low: "低置信 / 数据不足",
+}
+
 function isString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
 }
@@ -175,6 +187,12 @@ function changeClass(change: EvidenceChange) {
   if (change === "worsened") return "border-red-200 bg-red-50 text-red-700"
   if (change === "unchanged") return "border-slate-200 bg-slate-50 text-slate-700"
   return "border-amber-200 bg-amber-50 text-amber-700"
+}
+
+function confidenceClass(level: EvidenceConfidenceLevel) {
+  if (level === "high") return "border-green-200 bg-green-50 text-green-700"
+  if (level === "medium") return "border-amber-200 bg-amber-50 text-amber-700"
+  return "border-slate-200 bg-slate-50 text-slate-700"
 }
 
 function formatDate(value: Date) {
@@ -253,13 +271,14 @@ async function getEvidenceMapPageData() {
     return {
       evidenceItem,
       answerSources,
+      answer,
     }
   }
 
   const rows: EvidenceMapRow[] = Array.from(runsByQuery.values()).map((runs) => {
     const run = runs[0]
     const previousRun = runs[1] ?? null
-    const { evidenceItem, answerSources } = buildEvidenceItem(run)
+    const { evidenceItem, answerSources, answer } = buildEvidenceItem(run)
     const previousEvidenceItem = previousRun ? buildEvidenceItem(previousRun).evidenceItem : null
 
     const repairTask = mapEvidenceGapToRepairTask(evidenceItem)
@@ -267,6 +286,13 @@ async function getEvidenceMapPageData() {
     const comparison = compareEvidenceRuns({
       previous: previousEvidenceItem,
       current: evidenceItem,
+    })
+    const confidenceLabel = classifyEvidenceConfidence({
+      evidenceItem,
+      answerSources,
+      answer,
+      citationsJson: run.analysis?.citationsJson,
+      comparison,
     })
 
     return {
@@ -282,6 +308,7 @@ async function getEvidenceMapPageData() {
       previousRunId: previousRun?.id ?? null,
       previousRunCreatedAt: previousRun?.createdAt ?? null,
       comparison,
+      confidenceLabel,
     }
   })
 
@@ -417,7 +444,7 @@ export default async function EvidenceMapPage() {
           <CardHeader>
             <CardTitle>Query Evidence Table</CardTitle>
             <CardDescription>
-              基于每个 Query 最近一次监测结果派生，当前为启发式系统推断，不写入数据库。
+              基于每个 Query 最近一次监测结果派生，当前为启发式系统推断，不写入数据库；该判断基于当前可用答案与来源信息，不代表平台官方归因。
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -432,6 +459,7 @@ export default async function EvidenceMapPage() {
                   <TableHead>建议页面</TableHead>
                   <TableHead>建议修复任务</TableHead>
                   <TableHead>前后变化</TableHead>
+                  <TableHead>置信度</TableHead>
                   <TableHead>优先级</TableHead>
                   <TableHead>原因</TableHead>
                 </TableRow>
@@ -547,6 +575,25 @@ export default async function EvidenceMapPage() {
                           暂无历史对比。完成下一次 Monitoring 后，这里会显示答案变化。
                         </div>
                       )}
+                    </TableCell>
+                    <TableCell className="max-w-[16rem] whitespace-normal">
+                      <Badge
+                        className={confidenceClass(row.confidenceLabel.confidenceLevel)}
+                        variant="outline"
+                      >
+                        {confidenceLevelLabels[row.confidenceLabel.confidenceLevel]}
+                      </Badge>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {row.confidenceLabel.confidenceScore}%
+                      </div>
+                      <div className="mt-2 text-xs">
+                        {row.confidenceLabel.reasons[0]}
+                      </div>
+                      {row.confidenceLabel.warnings[0] ? (
+                        <div className="mt-1 text-xs text-amber-700">
+                          {row.confidenceLabel.warnings[0]}
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell>
                       <Badge className={priorityClass(row.priority)} variant="outline">
