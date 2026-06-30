@@ -9,30 +9,30 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Evidence Confidence Label：证据链置信度标签 |
-| 执行分支 | `codex/evidence-confidence-label` |
-| 状态 | PR 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #11：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/11](https://github.com/qixin-portfolio/geo-monitor-saas/pull/11) |
-| 上一轮依赖 | PR #10 已合并到远端 main |
-| 实现 commit | `5e7e97db447bc545f104887dd17e4ddfe6a3531a` |
+| 当前任务 | Evidence Detail Drawer：证据详情抽屉 |
+| 执行分支 | `codex/evidence-detail-drawer` |
+| 状态 | 等待人工确认合并 |
+| GitHub 入口 | PR #12：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/12](https://github.com/qixin-portfolio/geo-monitor-saas/pull/12) |
+| 上一轮依赖 | PR #11 已合并到远端 main |
+| 实现 commit | `7665cd45a6b3614f1e21e8b522309bbe70cbc688` |
+| 当前 head commit | `64bfd84363d2546aabcdda8f8c2ff84e306097bd` |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `src/lib/evidence/classify-evidence-confidence.ts`：新增置信度标签纯函数，输出 `high` / `medium` / `low`、0-100 分、原因和 warning。
-- `src/lib/evidence/classify-evidence-confidence.test.ts`：覆盖 URL + 官网高置信、竞品无 URL 中置信、异常 JSON / unknown / 空 answer / 缺少 previous run 低置信、多强信号高置信。
-- `src/app/dashboard/evidence-map/page.tsx`：轻量展示置信度标签、分数、原因和数据不足提示；仍然只读。
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 Evidence Confidence Label 接入轮。
-- `docs/architecture/evidence-chain-data-model.md`：记录 `EvidenceConfidenceLabel` 概念模型和不落库边界。
-- `docs/loops/evidence-led-geo-loop.md`：把置信度标签纳入 Loop 过程、输出和验收。
+- `src/app/dashboard/evidence-map/page.tsx`：接入每条 query 的“查看详情”入口，把已存在的 derived data 传给详情抽屉。
+- `src/app/dashboard/evidence-map/evidence-detail-drawer.tsx`：新增轻量客户端详情抽屉，展示 Query 基本信息、品牌/竞品判断、来源判断、Evidence Gap、RepairTask Draft、Run Comparison 和 Confidence Label。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 Evidence Detail Drawer 接入轮。
+- `docs/architecture/evidence-chain-data-model.md`：记录详情抽屉作为只读 UI 投影，不新增数据模型。
+- `docs/loops/evidence-led-geo-loop.md`：把详情抽屉纳入 Loop 过程、输出和验收。
 - `AI_TASKS/current.md`：记录本轮任务。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `pnpm exec vitest run src/lib/evidence/classify-evidence-confidence.test.ts`：通过，1 个文件 7 个测试。
-- `pnpm test:unit`：通过，17 个文件 75 个测试。
+- `pnpm exec vitest run src/lib/evidence/classify-evidence-confidence.test.ts src/lib/evidence/extract-answer-sources.test.ts src/lib/evidence/extract-evidence-map.test.ts src/lib/evidence/map-evidence-gap-to-repair-task.test.ts src/lib/evidence/map-repair-task-to-content-task.test.ts src/lib/evidence/compare-evidence-runs.test.ts`：通过，6 个文件 / 48 个测试。
+- `pnpm test:unit`：通过，17 个文件 / 75 个测试。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
 - `git diff --check`：通过。
@@ -47,14 +47,14 @@
 - 本轮不接入数据库写入。
 - 本轮不做 Lead Attribution、PDF、全平台接入。
 - 本轮不创建真实数据库 RepairTask 按钮。
-- 置信度标签是系统推断解释，不代表平台官方归因。
+- 详情抽屉是系统推断解释，不代表平台官方归因。
 - Evidence Map 页面仍是只读 derived data，不展示完整 raw API response。
 
 ### 下一步建议
 
-1. 完成 `test:unit` / `typecheck` / `build` / `git diff --check` 后创建 PR。
-2. 审查 PR 时重点看置信度阈值是否过度乐观。
-3. 后续继续用脱敏真实 run 样本校准高 / 中 / 低阈值。
+1. 等待人工确认是否合并 PR #12。
+2. 合并前重点确认 drawer 是否只展示 derived data，是否误导用户把推断当事实。
+3. 下一轮若考虑“创建单条修复任务”按钮，必须单独审查 tenant 校验、字段校验、幂等去重和权限。
 4. Lead Attribution 仍应另开独立 Issue，等任务池稳定后再做。
 
 ---
@@ -69,3 +69,4 @@
 | 2026-06-30 | RepairTask 接入 Content Backlog | PR #8 | 已合并 | RepairTask draft 映射为 Content Backlog draft |
 | 2026-06-30 | Run Before/After Comparison | PR #9 | 已合并 | 同一 query 最近两次 AI 答案变化对比 |
 | 2026-06-30 | Real Run Calibration | PR #10 | 已合并 | 脱敏真实 run 样本校准 Evidence 规则 |
+| 2026-06-30 | Evidence Confidence Label | PR #11 | 已合并 | 证据链置信度标签 |
