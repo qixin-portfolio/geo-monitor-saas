@@ -123,12 +123,25 @@ RepairTask draft 能进入任务池语义后，下一步需要证明修复动作
 
 本轮仍是只读派生数据，不写入数据库，不创建真实 RepairTask，不做 Lead Attribution，不做 PDF，不做全平台接入。
 
+### Real-run Calibration 接入轮
+
+Run Comparison 合并后，本轮用脱敏 monitoring run 样本校准 Evidence Map / AnswerSource / RepairTask / Run Comparison 的启发式规则：
+
+- 新增 `real-run-samples` 脱敏夹具，覆盖品牌未提及、竞品提及、工商来源、官网/本地列表/权威媒体、字符串化 citations、异常 citations、前后改善/无变化/恶化。
+- 校准 AnswerSource extraction 对 `citationsJson`、`sourcesJson`、嵌套来源对象、URL 尾部标点和 owned domain 的容错。
+- 校准 source type 分类，补充工商、短视频、本地列表、权威媒体等更接近真实 run 的关键词和域名线索。
+- 校准 Evidence Gap，避免在品牌已经有官网、本地列表或权威媒体证据时误判为“只有工商信息”。
+- 校准 RepairTask 映射，避免在已有高质量来源时误触发 `schema_fix`。
+- 保持 Evidence Map 页面只读，并用文案说明这些判断是系统推断，数据不足不是失败。
+
+本轮仍不接生产数据库，不写入 RepairTask，不修改 Prisma schema，不生成 migration，不做 Lead Attribution。真实样本只保留足够测试规则的脱敏字段，不保存客户隐私或完整 raw API response。
+
 ### V1.2
 
-- 用真实 run 样本校准 AnswerSource extraction。
+- 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
 - 评估是否把 RepairTask draft 安全写入现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
-- 用更多真实样本校准前后变化判断规则。
+- 评估“创建修复任务”按钮是否具备登录、tenant 校验、字段校验和去重条件。
 
 ### V1.3
 

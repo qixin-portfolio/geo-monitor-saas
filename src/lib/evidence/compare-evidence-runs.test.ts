@@ -2,10 +2,17 @@ import { describe, expect, it } from "vitest"
 
 import type { EvidenceMapItem } from "./extract-evidence-map"
 import { compareEvidenceRuns } from "./compare-evidence-runs"
+import { extractAnswerSources } from "./extract-answer-sources"
+import { extractEvidenceMap } from "./extract-evidence-map"
+import {
+  type RealRunSample,
+  SAMPLE_COMPETITORS,
+  runComparisonSamples,
+} from "./fixtures/real-run-samples"
 
 function evidenceItem(overrides: Partial<EvidenceMapItem>): EvidenceMapItem {
   return {
-    query: "交城装修公司推荐",
+    query: "本地装修公司推荐",
     brandMentioned: false,
     competitorsMentioned: [],
     sourceTypes: ["unknown"],
@@ -16,6 +23,30 @@ function evidenceItem(overrides: Partial<EvidenceMapItem>): EvidenceMapItem {
     confidence: 0.78,
     reason: "AI 没有提到本品牌。",
     ...overrides,
+  }
+}
+
+function evidenceItemFromSample(sample: RealRunSample): EvidenceMapItem {
+  const [item] = extractEvidenceMap({
+    query: sample.query,
+    answer: [sample.answer, sample.summary].filter(Boolean).join("\n"),
+    brandName: sample.brandName,
+    competitors: sample.competitors,
+  })
+  const answerSources = extractAnswerSources({
+    citationsJson: sample.citationsJson,
+    sourcesJson: sample.sourcesJson,
+    answer: sample.answer,
+    summary: sample.summary,
+    ownedDomains: sample.ownedDomains,
+    competitorNames: sample.competitors,
+  })
+
+  return {
+    ...item,
+    sourceTypes: Array.from(
+      new Set([...item.sourceTypes, ...answerSources.map((source) => source.sourceType)])
+    ),
   }
 }
 
@@ -43,8 +74,8 @@ describe("compareEvidenceRuns", () => {
 
   it("marks fewer competitors as improved", () => {
     const comparison = compareEvidenceRuns({
-      previous: evidenceItem({ competitorsMentioned: ["家装e站", "交换空间"] }),
-      current: evidenceItem({ competitorsMentioned: ["家装e站"] }),
+      previous: evidenceItem({ competitorsMentioned: SAMPLE_COMPETITORS }),
+      current: evidenceItem({ competitorsMentioned: [SAMPLE_COMPETITORS[0]] }),
     })
 
     expect(comparison.competitorChangeSummary).toBe("improved")
@@ -104,5 +135,18 @@ describe("compareEvidenceRuns", () => {
     expect(comparison.sourceTypeChangeSummary).toBe("unchanged")
     expect(comparison.gapChange).toBe("unchanged")
     expect(comparison.overallChange).toBe("unchanged")
+  })
+
+  it.each([
+    ["improved", runComparisonSamples.improved, "improved"],
+    ["unchanged", runComparisonSamples.unchanged, "unchanged"],
+    ["worsened", runComparisonSamples.worsened, "worsened"],
+  ] as const)("calibrates %s real-run comparison samples", (_, samplePair, expected) => {
+    const comparison = compareEvidenceRuns({
+      previous: evidenceItemFromSample(samplePair.previous),
+      current: evidenceItemFromSample(samplePair.current),
+    })
+
+    expect(comparison.overallChange).toBe(expected)
   })
 })

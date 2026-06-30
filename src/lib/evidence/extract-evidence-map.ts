@@ -46,18 +46,37 @@ export type ExtractEvidenceMapInput = {
 }
 
 const SOURCE_RULES: Array<{ type: EvidenceSourceType; keywords: string[] }> = [
-  { type: "business_registry", keywords: ["爱企查", "企查查", "天眼查", "aiqicha", "qcc", "tianyancha"] },
-  { type: "short_video", keywords: ["抖音", "视频", "点赞", "douyin"] },
+  {
+    type: "business_registry",
+    keywords: ["爱企查", "企查查", "天眼查", "aiqicha", "aiqicha.baidu.com", "qcc", "qcc.com", "tianyancha", "tianyancha.com"],
+  },
+  { type: "short_video", keywords: ["抖音", "快手", "视频", "点赞", "douyin", "kuaishou"] },
   { type: "xiaohongshu", keywords: ["小红书", "xiaohongshu"] },
   { type: "zhihu", keywords: ["知乎", "zhihu"] },
-  { type: "wechat", keywords: ["微信", "公众号", "weixin", "wechat"] },
-  { type: "official_site", keywords: ["官网", "网站", "official site"] },
-  { type: "local_listing", keywords: ["大众点评", "高德", "百度地图", "地图", "amap", "dianping"] },
-  { type: "authority_media", keywords: ["协会", "媒体", "报道", "日报"] },
+  { type: "wechat", keywords: ["微信", "公众号", "weixin", "wechat", "mp.weixin.qq.com"] },
+  { type: "official_site", keywords: ["官网", "官方网站", "网站", "official site"] },
+  {
+    type: "local_listing",
+    keywords: ["大众点评", "高德", "百度地图", "地图", "本地列表", "本地服务列表", "门店", "amap", "amap.com", "dianping", "dianping.com", "map.baidu.com"],
+  },
+  { type: "authority_media", keywords: ["协会", "媒体", "权威媒体", "行业媒体", "新闻", "报道", "日报"] },
 ]
 
+const QUALITY_SOURCE_TYPES: EvidenceSourceType[] = [
+  "official_site",
+  "local_listing",
+  "authority_media",
+]
+
+function normalizeForMatch(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[\s\u3000\-_/·,，。.;；:：、|()（）[\]【】"'“”‘’]+/g, "")
+}
+
 function normalizedIncludes(text: string, keyword: string) {
-  return text.toLowerCase().includes(keyword.toLowerCase())
+  const normalizedKeyword = normalizeForMatch(keyword)
+  return normalizedKeyword ? normalizeForMatch(text).includes(normalizedKeyword) : false
 }
 
 function unique<T>(items: T[]) {
@@ -128,6 +147,10 @@ function classifyGap({
   competitorsMentioned: string[]
   sourceTypes: EvidenceSourceType[]
 }): Pick<EvidenceMapItem, "evidenceGap" | "priority" | "confidence" | "reason"> {
+  const hasQualitySource = sourceTypes.some((sourceType) =>
+    QUALITY_SOURCE_TYPES.includes(sourceType)
+  )
+
   if (!brandMentioned && competitorsMentioned.length > 0) {
     return {
       evidenceGap: "competitor_evidence_advantage",
@@ -149,13 +172,13 @@ function classifyGap({
   if (
     brandMentioned &&
     sourceTypes.includes("business_registry") &&
-    !sourceTypes.includes("official_site")
+    !hasQualitySource
   ) {
     return {
       evidenceGap: "weak_brand_definition",
       priority: "P1",
       confidence: 0.68,
-      reason: "AI 能识别品牌，但证据更像工商信息，缺少官网或业务页面来定义品牌优势。",
+      reason: "AI 能识别品牌，但证据更像工商信息，缺少官网、本地列表或权威媒体来定义品牌优势。",
     }
   }
 

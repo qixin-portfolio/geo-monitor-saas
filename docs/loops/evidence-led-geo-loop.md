@@ -34,7 +34,8 @@
 7. 将 evidence gap 映射为 RepairTask draft。
 8. 将 RepairTask draft 映射为 Content Backlog draft。
 9. 对比同一 query 最近两次 run 的答案变化。
-10. 未来与线索做弱归因匹配。
+10. 用脱敏 real-run samples 回归测试启发式规则，减少误判。
+11. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -44,6 +45,7 @@
 - RepairTask draft
 - Content Backlog draft
 - EvidenceRunComparison
+- Real-run calibration fixtures
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -63,6 +65,10 @@
 - Content Backlog draft 映射不写入数据库。
 - `mapRepairTaskToContentTask` 单元测试通过。
 - `compareEvidenceRuns` 单元测试通过。
+- 脱敏 real-run samples 覆盖 citations 数组、字符串化 JSON、异常 citations、来源质量提升和前后变化。
+- AnswerSource extraction 对缺失或异常 citations 安全 fallback。
+- Evidence gap 不会在已有官网、本地列表或权威媒体时误判为弱品牌定义。
+- Run Comparison 在数据不足时返回 `unknown`，不误判为 `improved`。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。
@@ -80,6 +86,7 @@
 - 需要把 RepairTask 直接写入生产任务池。
 - 需要保存 EvidenceRunComparison 到数据库。
 - 需要真实密钥或外部付费 API。
+- 需要导入生产 raw API response 或客户隐私样本。
 - 需要修改认证、支付、部署配置。
 - schema 影响过大。
 - dashboard 路由异常。
