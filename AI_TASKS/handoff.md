@@ -11,8 +11,9 @@
 |------|------|
 | 当前任务 | Evidence Chain Hardening：证据链数据质量加固 |
 | 执行分支 | `codex/evidence-chain-hardening` |
-| 状态 | 待 PR 创建 |
-| GitHub 入口 | 本任务由用户直接发起，完成后创建 PR |
+| 状态 | 等待人工确认合并 |
+| GitHub 入口 | PR #7：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/7](https://github.com/qixin-portfolio/geo-monitor-saas/pull/7) |
+| 实现 commit | `51225b5704afe4d5dc4e0b8b924cca722f2b8b92` |
 
 ## 本轮交接
 
@@ -37,7 +38,7 @@
 - `pnpm test:unit`：通过，14 个文件 45 个测试。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
-- 待完成：`git diff --check`。
+- `git diff --check`：通过。
 
 ### 风险与注意事项
 
@@ -45,6 +46,7 @@
 - 本轮不生成 migration。
 - 本轮不运行生产迁移。
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
+- 本轮不自动部署。
 - AnswerSource 和 RepairTask 仍是 derived draft，不落库。
 - Evidence extraction 仍是启发式推断，不能当成事实引用证明。
 
@@ -62,4 +64,4 @@
 |------|------|-----------|------|------|
 | 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
 | 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
-| 2026-06-30 | Evidence Chain Hardening | `codex/evidence-chain-hardening` | 待 PR 创建 | 测试 + AnswerSource + RepairTask draft |
+| 2026-06-30 | Evidence Chain Hardening | PR #7 | 等待人工确认合并 | 测试 + AnswerSource + RepairTask draft |
