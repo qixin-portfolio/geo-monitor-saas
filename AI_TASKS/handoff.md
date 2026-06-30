@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | Evidence Detail Drawer：证据详情抽屉 |
 | 执行分支 | `codex/evidence-detail-drawer` |
-| 状态 | 验证已通过，等待提交和创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #12：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/12](https://github.com/qixin-portfolio/geo-monitor-saas/pull/12) |
 | 上一轮依赖 | PR #11 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `7665cd45a6b3614f1e21e8b522309bbe70cbc688` |
 
 ## 本轮交接
 
