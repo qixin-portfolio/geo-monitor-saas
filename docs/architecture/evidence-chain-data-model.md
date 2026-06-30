@@ -200,6 +200,8 @@ AI 回答引用或被推断依赖的来源。
 - RepairTask draft 映射。
 - RepairTask draft 到 Content Backlog draft 的兼容映射。
 - Evidence extraction 单元测试。
+- EvidenceRunComparison draft。
+- 同一 query 最近两次 run 的 before/after 只读对比。
 
 未来实现：
 
@@ -209,12 +211,45 @@ AI 回答引用或被推断依赖的来源。
 - RepairTask 安全写入 Content Backlog。
 - LeadEvent 弱归因。
 
-## 9. 何时考虑 Prisma schema
+## 9. EvidenceRunComparison
+
+同一个 query 最近两次 AI 回答的变化判断。
+
+字段：
+
+- `query`
+- `previousBrandMentioned`
+- `currentBrandMentioned`
+- `brandMentionChange`
+- `previousCompetitors`
+- `currentCompetitors`
+- `competitorChangeSummary`
+- `previousSourceTypes`
+- `currentSourceTypes`
+- `sourceTypeChangeSummary`
+- `previousEvidenceGap`
+- `currentEvidenceGap`
+- `gapChange`
+- `overallChange`
+- `reason`
+- `confidence`
+
+本轮状态：
+
+- 不新增表。
+- 不生成 migration。
+- 已实现为 `EvidenceRunComparison` derived data。
+- 页面从现有 `QueryRun` 按 `queryId` 分组，取最近两次 run 派生对比。
+- 如果没有历史 run，返回 `overallChange = unknown` 并展示“暂无历史对比”。
+- 不保存前后对比结果，避免在规则未校准前固化误判。
+
+## 10. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
 - AnswerSource extraction 在至少 3-5 轮真实 run 中稳定。
 - RepairTask draft 的类型和字段能覆盖 Content Backlog 场景。
+- EvidenceRunComparison 在多轮真实 monitoring 中能稳定识别改善/恶化。
 - 页面修复建议能被用户确认有实际执行价值。
 - 需要跨 batch 保存来源和修复任务历史。
 - 现有 `GeoContentTask.evidenceJson` 和 `briefJson` 无法承载必要字段。

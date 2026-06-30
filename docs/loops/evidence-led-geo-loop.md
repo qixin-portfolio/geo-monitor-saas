@@ -33,7 +33,7 @@
 6. 生成页面级建议。
 7. 将 evidence gap 映射为 RepairTask draft。
 8. 将 RepairTask draft 映射为 Content Backlog draft。
-9. 未来对比上次 run 的答案变化。
+9. 对比同一 query 最近两次 run 的答案变化。
 10. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
@@ -43,6 +43,7 @@
 - Page Impact Recommendation
 - RepairTask draft
 - Content Backlog draft
+- EvidenceRunComparison
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -61,6 +62,9 @@
 - RepairTask draft 不写入数据库。
 - Content Backlog draft 映射不写入数据库。
 - `mapRepairTaskToContentTask` 单元测试通过。
+- `compareEvidenceRuns` 单元测试通过。
+- Evidence Map 能展示“答案变化趋势”。
+- 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。
 - 不写入真实 secret。
 - 不修改 Prisma schema。
@@ -74,6 +78,7 @@
 
 - 需要生产数据库迁移。
 - 需要把 RepairTask 直接写入生产任务池。
+- 需要保存 EvidenceRunComparison 到数据库。
 - 需要真实密钥或外部付费 API。
 - 需要修改认证、支付、部署配置。
 - schema 影响过大。
