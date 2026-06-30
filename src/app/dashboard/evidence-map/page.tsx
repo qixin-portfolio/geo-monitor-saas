@@ -34,6 +34,10 @@ import {
   type RepairTaskDraft,
   mapEvidenceGapToRepairTask,
 } from "@/lib/evidence/map-evidence-gap-to-repair-task"
+import {
+  type ContentBacklogTaskDraft,
+  mapRepairTaskToContentTask,
+} from "@/lib/evidence/map-repair-task-to-content-task"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
 
@@ -47,6 +51,7 @@ type EvidenceMapRow = EvidenceMapItem & {
   runCreatedAt: Date
   answerSources: AnswerSourceDraft[]
   repairTask: RepairTaskDraft
+  contentTaskDraft: ContentBacklogTaskDraft
 }
 
 const sourceTypeLabels: Record<EvidenceSourceType, string> = {
@@ -88,6 +93,17 @@ const repairTaskTypeLabels: Record<RepairTaskDraft["taskType"], string> = {
   authority_building: "权威背书",
   sentiment_defense: "舆情防御",
   competitor_counter: "竞品反制",
+}
+
+const contentTaskTypeLabels: Record<ContentBacklogTaskDraft["type"], string> = {
+  ARTICLE: "文章",
+  FAQ: "常见问题",
+  CASE_PAGE: "案例页",
+  COMPARISON: "对比分析",
+  LOCAL_SERVICE_PAGE: "服务介绍",
+  LLMSTXT: "LLMs.txt",
+  SCHEMA: "结构化数据",
+  SOCIAL_POST: "社媒内容",
 }
 
 function isString(value: unknown): value is string {
@@ -202,6 +218,9 @@ async function getEvidenceMapPageData() {
       sourceTypes,
     }
 
+    const repairTask = mapEvidenceGapToRepairTask(evidenceItem)
+    const contentTaskDraft = mapRepairTaskToContentTask(repairTask)
+
     return {
       ...evidenceItem,
       id: run.id,
@@ -210,7 +229,8 @@ async function getEvidenceMapPageData() {
       intentType: run.query.intentType,
       runCreatedAt: run.createdAt,
       answerSources,
-      repairTask: mapEvidenceGapToRepairTask(evidenceItem),
+      repairTask,
+      contentTaskDraft,
     }
   })
 
@@ -387,6 +407,19 @@ export default async function EvidenceMapPage() {
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         工作量：{row.repairTask.effortLevel}
+                      </div>
+                      <div className="mt-3 rounded-md border border-dashed px-3 py-2 text-xs">
+                        <div className="font-medium">可进入修复任务池</div>
+                        <div className="mt-1 text-muted-foreground">
+                          映射为：{contentTaskTypeLabels[row.contentTaskDraft.type]} · 优先级{" "}
+                          {row.contentTaskDraft.priority}
+                        </div>
+                        <Link
+                          href="/dashboard/content-backlog"
+                          className="mt-2 inline-flex text-primary underline-offset-2 hover:underline"
+                        >
+                          查看任务池
+                        </Link>
                       </div>
                     </TableCell>
                     <TableCell>

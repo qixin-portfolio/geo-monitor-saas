@@ -9,35 +9,32 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Evidence Chain Hardening：证据链数据质量加固 |
-| 执行分支 | `codex/evidence-chain-hardening` |
+| 当前任务 | RepairTask 接入 Content Backlog：证据缺口进入修复任务池 |
+| 执行分支 | `codex/repair-task-backlog` |
 | 状态 | 等待人工确认合并 |
-| GitHub 入口 | PR #7：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/7](https://github.com/qixin-portfolio/geo-monitor-saas/pull/7) |
-| 实现 commit | `51225b5704afe4d5dc4e0b8b924cca722f2b8b92` |
+| GitHub 入口 | PR #8：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/8](https://github.com/qixin-portfolio/geo-monitor-saas/pull/8) |
+| 上一轮依赖 | PR #7 已合并到 main |
+| 实现 commit | `d87a88a` |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：补充 hardening 范围和暂不落库原因。
-- `docs/loops/evidence-led-geo-loop.md`：补充 AnswerSource / RepairTask draft 流程。
-- `docs/architecture/evidence-chain-data-model.md`：补充 draft 实现状态和 schema 判断条件。
-- `src/lib/evidence/extract-evidence-map.ts`：导出来源类型推断方法。
-- `src/lib/evidence/extract-evidence-map.test.ts`：补充 Evidence Map 规则测试。
-- `src/lib/evidence/extract-answer-sources.ts`：新增 AnswerSource draft 提取。
-- `src/lib/evidence/extract-answer-sources.test.ts`：补充 AnswerSource 测试。
-- `src/lib/evidence/map-evidence-gap-to-repair-task.ts`：新增 RepairTask draft 映射。
-- `src/lib/evidence/map-evidence-gap-to-repair-task.test.ts`：补充 RepairTask 映射测试。
-- `src/app/dashboard/evidence-map/page.tsx`：展示建议修复任务。
+- `src/lib/evidence/map-repair-task-to-content-task.ts`：新增 RepairTask draft 到 Content Backlog draft 的纯函数映射。
+- `src/lib/evidence/map-repair-task-to-content-task.test.ts`：覆盖 competitor advantage、missing evidence、weak definition、sentiment defense、new page、page update。
+- `src/app/dashboard/evidence-map/page.tsx`：展示“可进入修复任务池”的只读入口和映射后的任务类型/优先级。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：说明 RepairTask Backlog 接入轮和不做 Lead Attribution。
+- `docs/loops/evidence-led-geo-loop.md`：补充 Content Backlog draft 输出和停止条件。
+- `docs/architecture/evidence-chain-data-model.md`：说明 RepairTask 到 GeoContentTask 的兼容映射。
 - `AI_TASKS/current.md`：记录本轮任务。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `pnpm exec vitest run src/lib/evidence/extract-evidence-map.test.ts src/lib/evidence/extract-answer-sources.test.ts src/lib/evidence/map-evidence-gap-to-repair-task.test.ts`：通过，3 个文件 18 个测试。
-- `pnpm test:unit`：通过，14 个文件 45 个测试。
+- `pnpm exec vitest run src/lib/evidence/map-repair-task-to-content-task.test.ts`：通过，1 个文件 6 个测试。
+- `pnpm test:unit`：通过，15 个文件 51 个测试。
 - `pnpm typecheck`：通过。
-- `pnpm build`：通过，包含 `/dashboard/evidence-map` 路由。
+- `pnpm build`：通过，包含 `/dashboard/evidence-map` 和 `/dashboard/content-backlog` 路由。
 - `git diff --check`：通过。
 
 ### 风险与注意事项
@@ -47,14 +44,17 @@
 - 本轮不运行生产迁移。
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
 - 本轮不自动部署。
-- AnswerSource 和 RepairTask 仍是 derived draft，不落库。
-- Evidence extraction 仍是启发式推断，不能当成事实引用证明。
+- 本轮不接入数据库写入。
+- 本轮不做 Lead Attribution、PDF、全平台接入。
+- `mapRepairTaskToContentTask` 仅生成可被现有 Content Backlog 语义消费的 draft。
+- Evidence Map 页面只读展示“可进入修复任务池”，不创建真实任务。
 
 ### 下一步建议
 
-1. 下一轮把 RepairTask draft 映射到 Content Backlog。
-2. 做 batch 前后对比，验证页面修复后 AI 答案是否变化。
-3. 用真实 run 样本校准 AnswerSource sourceType 规则。
+1. 审查本轮映射是否符合 Content Backlog 使用习惯。
+2. 如果通过，再设计安全的单条 RepairTask 创建 API。
+3. 做 batch 前后对比，验证页面修复后 AI 答案是否变化。
+4. Lead Attribution 另开独立 Issue，等任务池稳定后再做。
 
 ---
 
@@ -64,4 +64,5 @@
 |------|------|-----------|------|------|
 | 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
 | 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
-| 2026-06-30 | Evidence Chain Hardening | PR #7 | 等待人工确认合并 | 测试 + AnswerSource + RepairTask draft |
+| 2026-06-30 | Evidence Chain Hardening | PR #7 | 已合并 | 测试 + AnswerSource + RepairTask draft |
+| 2026-06-30 | RepairTask 接入 Content Backlog | PR #8 | 等待人工确认合并 | RepairTask draft 映射为 Content Backlog draft |

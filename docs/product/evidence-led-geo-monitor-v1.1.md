@@ -90,10 +90,29 @@ MVP 合并后的第一轮加固聚焦数据质量，不扩展大页面：
 
 ## 7. V1.2 / V1.3 演进路线
 
+### RepairTask Backlog 接入轮
+
+Evidence Chain Hardening 后，本轮把 RepairTask draft 连接到现有 Content Backlog 语义：
+
+- 新增 `mapRepairTaskToContentTask` 纯函数。
+- 将 `page_update`、`new_page`、`faq_addition`、`sentiment_defense`、`competitor_counter` 等 RepairTask 类型映射为现有 `GeoContentTaskType`。
+- 在 Evidence Map 页面展示“可进入修复任务池”的只读入口。
+- 使用现有 `GeoContentTask` 可展示字段承载 `evidenceGap`、`suggestedPage`、`expectedImpact` 和 `nextSteps`。
+- 本轮不写入数据库，不新增真实创建按钮，不修改 Prisma schema。
+
+暂不直接创建任务的原因：
+
+- 现有 `/api/runs/[id]/content-tasks` 是按 run 批量生成，不是按单条 RepairTask draft 精准创建。
+- Evidence Map 的 RepairTask 仍是启发式派生，需要先确认映射规则稳定。
+- 直接写库会引入去重、状态流、权限校验、误生成任务等额外风险。
+- 先做 draft 映射和只读入口，可以让用户看清“将会进入任务池的内容”。
+
+本轮不做 Lead Attribution。线索归因需要表单、电话、企微、埋点或页面访问数据，本轮目标只是让证据缺口进入可执行任务池语义。
+
 ### V1.2
 
 - 用真实 run 样本校准 AnswerSource extraction。
-- 把 RepairTask draft 映射到现有 Content Backlog。
+- 评估是否把 RepairTask draft 安全写入现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
 - 支持按 batch 对比前后答案变化。
 
