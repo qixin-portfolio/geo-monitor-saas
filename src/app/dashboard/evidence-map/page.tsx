@@ -38,6 +38,12 @@ import {
   type ContentBacklogTaskDraft,
   mapRepairTaskToContentTask,
 } from "@/lib/evidence/map-repair-task-to-content-task"
+import {
+  type BrandMentionChange,
+  type EvidenceChange,
+  type EvidenceRunComparison,
+  compareEvidenceRuns,
+} from "@/lib/evidence/compare-evidence-runs"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
 
@@ -52,6 +58,9 @@ type EvidenceMapRow = EvidenceMapItem & {
   answerSources: AnswerSourceDraft[]
   repairTask: RepairTaskDraft
   contentTaskDraft: ContentBacklogTaskDraft
+  previousRunId: string | null
+  previousRunCreatedAt: Date | null
+  comparison: EvidenceRunComparison
 }
 
 const sourceTypeLabels: Record<EvidenceSourceType, string> = {
@@ -106,6 +115,21 @@ const contentTaskTypeLabels: Record<ContentBacklogTaskDraft["type"], string> = {
   SOCIAL_POST: "社媒内容",
 }
 
+const evidenceChangeLabels: Record<EvidenceChange, string> = {
+  improved: "改善",
+  worsened: "恶化",
+  unchanged: "无变化",
+  unknown: "数据不足",
+}
+
+const brandMentionChangeLabels: Record<BrandMentionChange, string> = {
+  gained: "新增提及",
+  lost: "丢失提及",
+  unchanged_positive: "持续提及",
+  unchanged_negative: "持续未提及",
+  unknown: "数据不足",
+}
+
 function isString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
 }
@@ -146,6 +170,13 @@ function priorityClass(priority: EvidencePriority) {
   return "border-slate-200 bg-slate-50 text-slate-700"
 }
 
+function changeClass(change: EvidenceChange) {
+  if (change === "improved") return "border-green-200 bg-green-50 text-green-700"
+  if (change === "worsened") return "border-red-200 bg-red-50 text-red-700"
+  if (change === "unchanged") return "border-slate-200 bg-slate-50 text-slate-700"
+  return "border-amber-200 bg-amber-50 text-amber-700"
+}
+
 function formatDate(value: Date) {
   return value.toLocaleString("zh-CN", {
     month: "short",
@@ -178,15 +209,16 @@ async function getEvidenceMapPageData() {
     where: { tenantId: tenant.id },
   })
 
-  const latestByQuery = new Map<string, (typeof latestRuns)[number]>()
+  const runsByQuery = new Map<string, Array<(typeof latestRuns)[number]>>()
   for (const run of latestRuns) {
-    if (!latestByQuery.has(run.queryId)) {
-      latestByQuery.set(run.queryId, run)
-    }
+    const runs = runsByQuery.get(run.queryId) ?? []
+    runs.push(run)
+    runsByQuery.set(run.queryId, runs)
   }
 
   const brandName = tenant.brandName ?? tenant.name
-  const rows: EvidenceMapRow[] = Array.from(latestByQuery.values()).map((run) => {
+
+  function buildEvidenceItem(run: (typeof latestRuns)[number]) {
     const analysis = run.analysis
     const competitors = unique([
       ...DEFAULT_EVIDENCE_COMPETITORS,
@@ -218,8 +250,24 @@ async function getEvidenceMapPageData() {
       sourceTypes,
     }
 
+    return {
+      evidenceItem,
+      answerSources,
+    }
+  }
+
+  const rows: EvidenceMapRow[] = Array.from(runsByQuery.values()).map((runs) => {
+    const run = runs[0]
+    const previousRun = runs[1] ?? null
+    const { evidenceItem, answerSources } = buildEvidenceItem(run)
+    const previousEvidenceItem = previousRun ? buildEvidenceItem(previousRun).evidenceItem : null
+
     const repairTask = mapEvidenceGapToRepairTask(evidenceItem)
     const contentTaskDraft = mapRepairTaskToContentTask(repairTask)
+    const comparison = compareEvidenceRuns({
+      previous: previousEvidenceItem,
+      current: evidenceItem,
+    })
 
     return {
       ...evidenceItem,
@@ -231,6 +279,9 @@ async function getEvidenceMapPageData() {
       answerSources,
       repairTask,
       contentTaskDraft,
+      previousRunId: previousRun?.id ?? null,
+      previousRunCreatedAt: previousRun?.createdAt ?? null,
+      comparison,
     }
   })
 
@@ -242,6 +293,10 @@ async function getEvidenceMapPageData() {
       unmentionedCount: rows.filter((row) => !row.brandMentioned).length,
       competitorMentionedCount: rows.filter((row) => row.competitorsMentioned.length > 0).length,
       p0Count: rows.filter((row) => row.priority === "P0").length,
+      improvedCount: rows.filter((row) => row.comparison.overallChange === "improved").length,
+      worsenedCount: rows.filter((row) => row.comparison.overallChange === "worsened").length,
+      unchangedCount: rows.filter((row) => row.comparison.overallChange === "unchanged").length,
+      unknownCount: rows.filter((row) => row.comparison.overallChange === "unknown").length,
     },
   }
 }
@@ -305,6 +360,41 @@ export default async function EvidenceMapPage() {
         <DashboardStatCard label="P0 修复机会" value={summary.p0Count} />
       </section>
 
+      {rows.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">答案变化趋势</h2>
+            <p className="text-sm text-muted-foreground">
+              基于同一个 Query 最近两次 Monitoring 的 Evidence Map 结果对比。
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-md border px-4 py-3">
+              <div className="text-sm text-muted-foreground">改善</div>
+              <div className="mt-1 text-2xl font-semibold text-green-700">
+                {summary.improvedCount}
+              </div>
+            </div>
+            <div className="rounded-md border px-4 py-3">
+              <div className="text-sm text-muted-foreground">恶化</div>
+              <div className="mt-1 text-2xl font-semibold text-red-700">
+                {summary.worsenedCount}
+              </div>
+            </div>
+            <div className="rounded-md border px-4 py-3">
+              <div className="text-sm text-muted-foreground">无变化</div>
+              <div className="mt-1 text-2xl font-semibold">{summary.unchangedCount}</div>
+            </div>
+            <div className="rounded-md border px-4 py-3">
+              <div className="text-sm text-muted-foreground">数据不足</div>
+              <div className="mt-1 text-2xl font-semibold text-amber-700">
+                {summary.unknownCount}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {rows.length === 0 ? (
         <Card>
           <CardHeader>
@@ -341,6 +431,7 @@ export default async function EvidenceMapPage() {
                   <TableHead>证据缺口</TableHead>
                   <TableHead>建议页面</TableHead>
                   <TableHead>建议修复任务</TableHead>
+                  <TableHead>前后变化</TableHead>
                   <TableHead>优先级</TableHead>
                   <TableHead>原因</TableHead>
                 </TableRow>
@@ -421,6 +512,41 @@ export default async function EvidenceMapPage() {
                           查看任务池
                         </Link>
                       </div>
+                    </TableCell>
+                    <TableCell className="max-w-[20rem] whitespace-normal">
+                      <Badge
+                        className={changeClass(row.comparison.overallChange)}
+                        variant="outline"
+                      >
+                        {evidenceChangeLabels[row.comparison.overallChange]}
+                      </Badge>
+                      {row.previousRunId ? (
+                        <>
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            上次：{formatDate(row.previousRunCreatedAt!)} · 本次：
+                            {formatDate(row.runCreatedAt)}
+                          </div>
+                          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                            <div>
+                              品牌：{brandMentionChangeLabels[row.comparison.brandMentionChange]}
+                            </div>
+                            <div>
+                              竞品：{evidenceChangeLabels[row.comparison.competitorChangeSummary]}
+                            </div>
+                            <div>
+                              来源：{evidenceChangeLabels[row.comparison.sourceTypeChangeSummary]}
+                            </div>
+                            <div>
+                              缺口：{evidenceChangeLabels[row.comparison.gapChange]}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs">{row.comparison.reason}</div>
+                        </>
+                      ) : (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          暂无历史对比。完成下一次 Monitoring 后，这里会显示答案变化。
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge className={priorityClass(row.priority)} variant="outline">

@@ -109,12 +109,26 @@ Evidence Chain Hardening 后，本轮把 RepairTask draft 连接到现有 Conten
 
 本轮不做 Lead Attribution。线索归因需要表单、电话、企微、埋点或页面访问数据，本轮目标只是让证据缺口进入可执行任务池语义。
 
+### Run Before/After Comparison 接入轮
+
+RepairTask draft 能进入任务池语义后，下一步需要证明修复动作是否真的影响了 AI 答案。本轮增加同一个 query 最近两次 run 的前后变化对比：
+
+- 新增 `compareEvidenceRuns` 纯函数。
+- 基于同一 `queryId` 最近两条 `QueryRun` / `QueryRunAnalysis` 派生 EvidenceMapItem。
+- 判断品牌是否从未提及变成提及，或从提及变成未提及。
+- 判断竞品提及数量是否减少。
+- 判断来源类型是否从 `unknown` / `business_registry` 改善为 `official_site` / `authority_media` / `local_listing`。
+- 判断 evidence gap 是否从 P0 类缺口改善为 P1 或更低。
+- 在 Evidence Map 页面展示“答案变化趋势”和每条 query 的前后变化。
+
+本轮仍是只读派生数据，不写入数据库，不创建真实 RepairTask，不做 Lead Attribution，不做 PDF，不做全平台接入。
+
 ### V1.2
 
 - 用真实 run 样本校准 AnswerSource extraction。
 - 评估是否把 RepairTask draft 安全写入现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
-- 支持按 batch 对比前后答案变化。
+- 用更多真实样本校准前后变化判断规则。
 
 ### V1.3
 
