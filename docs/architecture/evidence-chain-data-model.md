@@ -296,7 +296,38 @@ AI 回答引用或被推断依赖的来源。
 - 它帮助用户判断哪些建议值得优先人工复核。
 - 它不改变 RepairTask draft，不创建数据库任务，不影响 billing / auth / deployment。
 
-## 12. 何时考虑 Prisma schema
+## 12. EvidenceDetailDrawer
+
+Evidence Detail Drawer 是 Evidence Map 的只读详情投影，不是新的数据模型。
+
+展示来源：
+
+- `EvidenceMapItem`
+- `AnswerSourceDraft`
+- `RepairTaskDraft`
+- `ContentBacklogTaskDraft` 的只读映射提示
+- `EvidenceRunComparison`
+- `EvidenceConfidenceLabel`
+- `QueryRun` / `Query` 上已有的 platform、surface、provider、model、createdAt
+
+本轮状态：
+
+- 新增 `/dashboard/evidence-map` 页面内的轻量详情抽屉。
+- 不新增 API。
+- 不写数据库。
+- 不保存 drawer 展示状态。
+- 不展示完整 raw API response。
+- 不展示 secret、token、数据库连接串或客户隐私字段。
+- 所有判断都标注为系统推断，不代表平台官方归因。
+
+使用边界：
+
+- Drawer 只用于解释“为什么系统给出这个证据缺口 / 修复建议 / 置信度”。
+- RepairTask 仍是 draft，不会自动创建真实 Content Backlog 任务。
+- Run Comparison 仍是 derived data，没有历史 run 时展示数据不足。
+- 下一轮若要增加“创建单条修复任务”按钮，必须单独审查 tenant 校验、字段校验、幂等去重和权限。
+
+## 13. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
@@ -304,6 +335,7 @@ AI 回答引用或被推断依赖的来源。
 - RepairTask draft 的类型和字段能覆盖 Content Backlog 场景。
 - EvidenceRunComparison 在多轮真实 monitoring 中能稳定识别改善/恶化。
 - EvidenceConfidenceLabel 在多轮真实样本中能稳定区分事实命中、系统推断和数据不足。
+- Evidence Detail Drawer 的解释信息经过用户复核，确认哪些字段值得长期保存。
 - 页面修复建议能被用户确认有实际执行价值。
 - 需要跨 batch 保存来源和修复任务历史。
 - 现有 `GeoContentTask.evidenceJson` 和 `briefJson` 无法承载必要字段。

@@ -51,6 +51,10 @@ import {
 } from "@/lib/evidence/classify-evidence-confidence"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
+import {
+  EvidenceDetailDrawer,
+  type EvidenceDetailDrawerData,
+} from "./evidence-detail-drawer"
 
 export const dynamic = "force-dynamic"
 
@@ -59,6 +63,10 @@ type EvidenceMapRow = EvidenceMapItem & {
   queryId: string
   runId: string
   intentType: string
+  platform: string
+  surface: string
+  provider: string
+  model: string
   runCreatedAt: Date
   answerSources: AnswerSourceDraft[]
   repairTask: RepairTaskDraft
@@ -301,6 +309,10 @@ async function getEvidenceMapPageData() {
       queryId: run.queryId,
       runId: run.id,
       intentType: run.query.intentType,
+      platform: run.query.platform,
+      surface: run.surface,
+      provider: run.provider,
+      model: run.model,
       runCreatedAt: run.createdAt,
       answerSources,
       repairTask,
@@ -462,6 +474,7 @@ export default async function EvidenceMapPage() {
                   <TableHead>置信度</TableHead>
                   <TableHead>优先级</TableHead>
                   <TableHead>原因</TableHead>
+                  <TableHead>详情</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -605,6 +618,36 @@ export default async function EvidenceMapPage() {
                       <div className="mt-1 text-xs text-muted-foreground">
                         可信度：{Math.round(row.confidence * 100)}%
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <EvidenceDetailDrawer
+                        detail={
+                          {
+                            query: row.query,
+                            intentLabel: intentLabels[row.intentType] ?? row.intentType,
+                            platform: row.platform,
+                            surface: row.surface,
+                            provider: row.provider,
+                            model: row.model,
+                            runTime: formatDate(row.runCreatedAt),
+                            brandMentioned: row.brandMentioned,
+                            competitorsMentioned: row.competitorsMentioned,
+                            sourceTypes: row.sourceTypes,
+                            answerSources: row.answerSources,
+                            evidenceGap: row.evidenceGap,
+                            priority: row.priority,
+                            reason: row.reason,
+                            suggestedPage: row.suggestedPage,
+                            suggestedAction: row.suggestedAction,
+                            repairTask: row.repairTask,
+                            comparison: row.comparison,
+                            previousRunTime: row.previousRunCreatedAt
+                              ? formatDate(row.previousRunCreatedAt)
+                              : null,
+                            confidenceLabel: row.confidenceLabel,
+                          } satisfies EvidenceDetailDrawerData
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

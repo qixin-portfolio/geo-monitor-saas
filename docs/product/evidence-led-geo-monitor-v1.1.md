@@ -146,10 +146,25 @@ Real-run Calibration 合并后，本轮给 Evidence Map / AnswerSource / RepairT
 
 页面展示仍是轻量只读：只显示置信度、简短原因和数据不足提示，不创建真实 RepairTask，不写入数据库，不把 derived data 当事实归因。
 
+### Evidence Detail Drawer 接入轮
+
+Evidence Confidence Label 合并后，本轮在 Evidence Map 页面增加轻量“证据详情抽屉”，让用户从单行表格结论下钻到系统推断依据：
+
+- Query 基本信息：query、场景、platform、surface、provider、model 和当前 run 时间。
+- 品牌与竞品判断：品牌是否提及、竞品命中列表和文本匹配依据。
+- 来源判断：sourceTypes、可解析来源、domain、sourceType、confidence 和 extractionMethod。
+- Evidence Gap：证据缺口、优先级、原因、建议页面和建议动作。
+- RepairTask Draft：任务类型、标题、预期影响、工作量和 next steps。
+- Run Before/After Comparison：同 query 最近两次 run 的品牌、竞品、来源、缺口和总体变化。
+- Confidence Label：高 / 中 / 低置信、分数、原因和 warning。
+
+本轮仍是只读 derived data 展示，不写入数据库，不创建真实 RepairTask，不修改 Prisma schema，不做 Lead Attribution，也不把系统推断包装成平台官方归因。
+
 ### V1.2
 
 - 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
 - 继续校准 Evidence Confidence Label 的阈值和文案，避免把弱推断包装成事实。
+- 观察 Evidence Detail Drawer 是否能帮助用户复核每条 query 的判断依据。
 - 评估是否把 RepairTask draft 安全写入现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
 - 评估“创建修复任务”按钮是否具备登录、tenant 校验、字段校验和去重条件。
