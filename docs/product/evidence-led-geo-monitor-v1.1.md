@@ -136,9 +136,20 @@ Run Comparison 合并后，本轮用脱敏 monitoring run 样本校准 Evidence 
 
 本轮仍不接生产数据库，不写入 RepairTask，不修改 Prisma schema，不生成 migration，不做 Lead Attribution。真实样本只保留足够测试规则的脱敏字段，不保存客户隐私或完整 raw API response。
 
+### Evidence Confidence Label 接入轮
+
+Real-run Calibration 合并后，本轮给 Evidence Map / AnswerSource / RepairTask / Run Comparison 增加置信度标签，帮助用户区分三类判断：
+
+- 高置信命中：明确命中品牌或竞品，并且有可解析 URL、官网、本地列表或权威媒体等强信号。
+- 中置信推断：主要依赖 answer / summary 文本关键词，能看到品牌或竞品线索，但来源证据不足。
+- 低置信 / 数据不足：缺少 citation、sourceType 为 `unknown`、answer 为空或过短、历史 run 缺失，或者 JSON 解析失败。
+
+页面展示仍是轻量只读：只显示置信度、简短原因和数据不足提示，不创建真实 RepairTask，不写入数据库，不把 derived data 当事实归因。
+
 ### V1.2
 
 - 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
+- 继续校准 Evidence Confidence Label 的阈值和文案，避免把弱推断包装成事实。
 - 评估是否把 RepairTask draft 安全写入现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
 - 评估“创建修复任务”按钮是否具备登录、tenant 校验、字段校验和去重条件。

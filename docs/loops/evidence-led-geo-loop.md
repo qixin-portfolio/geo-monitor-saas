@@ -35,7 +35,8 @@
 8. 将 RepairTask draft 映射为 Content Backlog draft。
 9. 对比同一 query 最近两次 run 的答案变化。
 10. 用脱敏 real-run samples 回归测试启发式规则，减少误判。
-11. 未来与线索做弱归因匹配。
+11. 给 Evidence Map / AnswerSource / RepairTask / Run Comparison 生成置信度标签。
+12. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -46,6 +47,7 @@
 - Content Backlog draft
 - EvidenceRunComparison
 - Real-run calibration fixtures
+- EvidenceConfidenceLabel
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -69,6 +71,8 @@
 - AnswerSource extraction 对缺失或异常 citations 安全 fallback。
 - Evidence gap 不会在已有官网、本地列表或权威媒体时误判为弱品牌定义。
 - Run Comparison 在数据不足时返回 `unknown`，不误判为 `improved`。
+- Evidence Confidence Label 能区分高置信命中、中置信推断、低置信或数据不足。
+- 置信度标签不写入数据库，不作为事实归因。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。

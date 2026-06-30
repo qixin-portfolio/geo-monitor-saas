@@ -264,13 +264,46 @@ AI 回答引用或被推断依赖的来源。
 - 不作为真实经营结论。
 - 后续每轮加入新真实样本时，仍需先脱敏，再转成最小测试夹具。
 
-## 11. 何时考虑 Prisma schema
+## 11. EvidenceConfidenceLabel
+
+用于解释 Evidence Map / AnswerSource / RepairTask / Run Comparison 的判断可信度。
+
+字段：
+
+- `confidenceLevel`: `high` / `medium` / `low`
+- `confidenceScore`: 0-100
+- `reasons`: 主要命中原因
+- `warnings`: 数据不足或弱推断提示
+
+本轮状态：
+
+- 已实现为 `classifyEvidenceConfidence` 纯函数。
+- 不新增表。
+- 不落库。
+- 不修改 Prisma schema。
+- 不生成 migration。
+- 页面只读展示“高置信命中 / 中置信推断 / 低置信或数据不足”。
+
+规则摘要：
+
+- 高置信：品牌或竞品明确命中，并且存在可解析 URL、官网、本地列表或权威媒体等强来源信号。
+- 中置信：主要来自 answer / summary 文本关键词，能看到品牌或竞品线索，但缺少结构化来源。
+- 低置信：缺少 citation、sourceType 为 `unknown`、answer 为空或过短、历史 run 缺失，或 JSON 解析失败。
+
+使用边界：
+
+- 置信度标签是系统推断解释，不是平台官方归因。
+- 它帮助用户判断哪些建议值得优先人工复核。
+- 它不改变 RepairTask draft，不创建数据库任务，不影响 billing / auth / deployment。
+
+## 12. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
 - AnswerSource extraction 在至少 3-5 轮脱敏真实 run 样本中稳定。
 - RepairTask draft 的类型和字段能覆盖 Content Backlog 场景。
 - EvidenceRunComparison 在多轮真实 monitoring 中能稳定识别改善/恶化。
+- EvidenceConfidenceLabel 在多轮真实样本中能稳定区分事实命中、系统推断和数据不足。
 - 页面修复建议能被用户确认有实际执行价值。
 - 需要跨 batch 保存来源和修复任务历史。
 - 现有 `GeoContentTask.evidenceJson` 和 `briefJson` 无法承载必要字段。
