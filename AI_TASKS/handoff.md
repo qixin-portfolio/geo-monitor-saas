@@ -11,10 +11,11 @@
 |------|------|
 | 当前任务 | Evidence Detail Drawer：证据详情抽屉 |
 | 执行分支 | `codex/evidence-detail-drawer` |
-| 状态 | PR 已创建，等待人工审查与合并确认 |
+| 状态 | 等待人工确认合并 |
 | GitHub 入口 | PR #12：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/12](https://github.com/qixin-portfolio/geo-monitor-saas/pull/12) |
 | 上一轮依赖 | PR #11 已合并到远端 main |
 | 实现 commit | `7665cd45a6b3614f1e21e8b522309bbe70cbc688` |
+| 当前 head commit | `64bfd84363d2546aabcdda8f8c2ff84e306097bd` |
 
 ## 本轮交接
 
@@ -51,8 +52,8 @@
 
 ### 下一步建议
 
-1. 完成 `test:unit` / `typecheck` / `build` / `git diff --check` 后创建 PR。
-2. 审查 PR 时重点看 drawer 是否只展示 derived data，是否误导用户把推断当事实。
+1. 等待人工确认是否合并 PR #12。
+2. 合并前重点确认 drawer 是否只展示 derived data，是否误导用户把推断当事实。
 3. 下一轮若考虑“创建单条修复任务”按钮，必须单独审查 tenant 校验、字段校验、幂等去重和权限。
 4. Lead Attribution 仍应另开独立 Issue，等任务池稳定后再做。
 
