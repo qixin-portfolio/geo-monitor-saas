@@ -70,12 +70,30 @@ GEO Monitor 从“AI 提及率监测工具”升级为：
 - 不生成 migration。
 - 不运行生产迁移。
 
-## 6. V1.2 / V1.3 演进路线
+## 6. Evidence Chain Hardening 范围
+
+MVP 合并后的第一轮加固聚焦数据质量，不扩展大页面：
+
+- 为 `extractEvidenceMap` 补充 Vitest 单元测试。
+- 从 `citationsJson`、URL、answer、summary 中提取 AnswerSource draft。
+- 将 evidence gap 映射为 RepairTask draft。
+- 在 Evidence Map 中展示“建议修复任务”。
+- 不把 AnswerSource / RepairTask 落库。
+- 不修改 Prisma schema。
+
+暂不落库的原因：
+
+- 当前规则仍是启发式，需要先通过真实监测结果校准。
+- AnswerSource 的 URL、domain、sourceType 结构需要更多样本验证。
+- RepairTask 与现有 Content Backlog 的关系还需要下一轮设计清楚。
+- 先用 derived data 验证产品价值，可回滚成本最低。
+
+## 7. V1.2 / V1.3 演进路线
 
 ### V1.2
 
-- 从 `citationsJson` 和 URL 中提取更稳定的 AnswerSource。
-- 把 RepairTask 设计映射到现有 Content Backlog。
+- 用真实 run 样本校准 AnswerSource extraction。
+- 把 RepairTask draft 映射到现有 Content Backlog。
 - 给每条 evidence gap 生成明确 next steps。
 - 支持按 batch 对比前后答案变化。
 
@@ -87,7 +105,7 @@ GEO Monitor 从“AI 提及率监测工具”升级为：
 - 增加可导出的 GEO Evidence Report。
 - 接入 LeadEvent，形成线索弱归因账本。
 
-## 7. 不做什么
+## 8. 不做什么
 
 本轮不做：
 
@@ -100,7 +118,7 @@ GEO Monitor 从“AI 提及率监测工具”升级为：
 - 生产数据库迁移。
 - 认证、支付、部署配置改动。
 
-## 8. 风险和反例
+## 9. 风险和反例
 
 ### 风险
 

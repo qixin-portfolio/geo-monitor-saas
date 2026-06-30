@@ -46,13 +46,13 @@ export type ExtractEvidenceMapInput = {
 }
 
 const SOURCE_RULES: Array<{ type: EvidenceSourceType; keywords: string[] }> = [
-  { type: "business_registry", keywords: ["爱企查", "企查查", "天眼查"] },
-  { type: "short_video", keywords: ["抖音", "视频", "点赞"] },
-  { type: "xiaohongshu", keywords: ["小红书"] },
-  { type: "zhihu", keywords: ["知乎"] },
-  { type: "wechat", keywords: ["微信", "公众号"] },
+  { type: "business_registry", keywords: ["爱企查", "企查查", "天眼查", "aiqicha", "qcc", "tianyancha"] },
+  { type: "short_video", keywords: ["抖音", "视频", "点赞", "douyin"] },
+  { type: "xiaohongshu", keywords: ["小红书", "xiaohongshu"] },
+  { type: "zhihu", keywords: ["知乎", "zhihu"] },
+  { type: "wechat", keywords: ["微信", "公众号", "weixin", "wechat"] },
   { type: "official_site", keywords: ["官网", "网站", "official site"] },
-  { type: "local_listing", keywords: ["大众点评", "高德", "百度地图", "地图"] },
+  { type: "local_listing", keywords: ["大众点评", "高德", "百度地图", "地图", "amap", "dianping"] },
   { type: "authority_media", keywords: ["协会", "媒体", "报道", "日报"] },
 ]
 
@@ -64,9 +64,9 @@ function unique<T>(items: T[]) {
   return Array.from(new Set(items))
 }
 
-function detectSourceTypes(answer: string): EvidenceSourceType[] {
+export function inferEvidenceSourceTypes(text: string): EvidenceSourceType[] {
   const detected = SOURCE_RULES.filter((rule) =>
-    rule.keywords.some((keyword) => normalizedIncludes(answer, keyword))
+    rule.keywords.some((keyword) => normalizedIncludes(text, keyword))
   ).map((rule) => rule.type)
 
   return detected.length ? unique(detected) : ["unknown"]
@@ -175,7 +175,7 @@ export function extractEvidenceMap(input: ExtractEvidenceMapInput): EvidenceMapI
   const brandName = input.brandName?.trim() ?? ""
   const brandMentioned = brandName ? normalizedIncludes(answer, brandName) : false
   const competitorsMentioned = detectCompetitors(answer, input.competitors)
-  const sourceTypes = detectSourceTypes(answer)
+  const sourceTypes = inferEvidenceSourceTypes(answer)
   const suggestion = pickSuggestedPage(query)
   const gap = classifyGap({
     brandMentioned,
