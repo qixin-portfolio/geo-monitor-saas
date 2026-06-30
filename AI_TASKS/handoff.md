@@ -11,9 +11,10 @@
 |------|------|
 | 当前任务 | RepairTask 接入 Content Backlog：证据缺口进入修复任务池 |
 | 执行分支 | `codex/repair-task-backlog` |
-| 状态 | 验证通过，待 PR 创建和人工审查 |
-| GitHub 入口 | 待创建 PR |
+| 状态 | 等待人工确认合并 |
+| GitHub 入口 | PR #8：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/8](https://github.com/qixin-portfolio/geo-monitor-saas/pull/8) |
 | 上一轮依赖 | PR #7 已合并到 main |
+| 实现 commit | `d87a88a` |
 
 ## 本轮交接
 
@@ -64,4 +65,4 @@
 | 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
 | 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
 | 2026-06-30 | Evidence Chain Hardening | PR #7 | 已合并 | 测试 + AnswerSource + RepairTask draft |
-| 2026-06-30 | RepairTask 接入 Content Backlog | `codex/repair-task-backlog` | 进行中 | RepairTask draft 映射为 Content Backlog draft |
+| 2026-06-30 | RepairTask 接入 Content Backlog | PR #8 | 等待人工确认合并 | RepairTask draft 映射为 Content Backlog draft |

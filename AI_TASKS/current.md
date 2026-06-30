@@ -12,9 +12,10 @@ RepairTask 接入 Content Backlog：证据缺口进入修复任务池
 ## GitHub 入口
 
 - Issue：待填写。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/8](https://github.com/qixin-portfolio/geo-monitor-saas/pull/8)
 - 分支：`codex/repair-task-backlog`
-- 当前状态：验证通过，待 PR 创建和人工审查。
+- 实现 commit：`d87a88a`
+- 当前状态：等待人工确认合并。
 
 ## 背景
 
@@ -67,7 +68,7 @@ Evidence Chain Hardening 已进入 main。Evidence Map 页面已经能派生 Rep
 - [x] 不修改 env。
 - [x] 不接入数据库写入。
 - [x] 不自动部署。
-- [ ] PR 描述已更新。
+- [x] PR 描述已更新。
 - [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
