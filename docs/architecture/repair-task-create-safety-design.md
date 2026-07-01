@@ -60,7 +60,7 @@ EvidenceMapItem
 
 - `taskType` 白名单：`page_update`、`new_page`、`faq_addition`、`schema_fix`、`third_party_profile`、`review_collection`、`authority_building`、`sentiment_defense`、`competitor_counter`。
 - `GeoContentTask.type` 白名单：沿用 Prisma `GeoContentTaskType`。
-- `priority` 白名单：RepairTask 使用 `P0` / `P1` / `P2`；Content Backlog 写库前映射为 1-100 数值。
+- `priority` 白名单：RepairTask 使用 `P0` / `P1` / `P2`；Content Backlog 写库前只接受映射后的 `90` / `70` / `45`，非法值直接拒绝。
 - `evidenceGap` 白名单：`competitor_evidence_advantage`、`missing_citable_brand_evidence`、`weak_brand_definition`、`no_major_gap`。
 - `relatedQuery` 长度限制，空值必须 fallback 为安全占位。
 - `suggestedPage` 长度限制。
@@ -76,6 +76,17 @@ EvidenceMapItem
 - 不依赖浏览器环境。
 - 输出 `valid`、`errors`、`sanitizedDraft`。
 - 只作为未来 server action / API 的安全基建，不代表本轮已接入写库。
+
+Validator Hardening 后的约束：
+
+- `sanitizedDraft` 使用显式白名单输出。
+- `evidenceJson` 只保留 `source`、`trigger`、`relatedQuery`、`suggestedPage`、`nextSteps`、`repairTask`。
+- `evidenceJson.repairTask` 只保留 `taskType`、`priority`、`evidenceGap`、`suggestedPage`、`expectedImpact`、`effortLevel`、`nextSteps`。
+- `briefJson` 只保留 `audience`、`searchIntent`、`angle`、`differentiationTargets`、`forbiddenClaims`、`evidenceNeeded`、`outline`、`internalLinks`、`llmsNotes`。
+- 未知字段不会通过 spread 进入 `sanitizedDraft`。
+- 嵌套 raw response、secret、token、cookie、authorization 等字段会被拒绝。
+- 顶层 Content Backlog priority 只接受 RepairTask 映射产生的 `90`、`70`、`45`；非法 priority 直接返回 `valid=false`，不再静默 fallback。
+- `sanitizedDraft` 可作为未来 server action 的输入基线，但真正写入前仍必须执行 server 端 tenant 校验、幂等去重和权限校验。
 
 ## 5. 幂等去重要求
 

@@ -346,6 +346,10 @@ EvidenceMapItem
 
 - 已新增 `validateRepairTaskDraft` 纯函数。
 - 已补单元测试覆盖白名单、长度清洗、raw response 拒绝、secret-like 字段拒绝、空 query fallback 和 nextSteps 限制。
+- Validator Hardening 后，`sanitizedDraft` 使用显式白名单输出，不再通过 spread 保留未知字段。
+- `evidenceJson`、`briefJson` 和嵌套 `repairTask` 都只保留未来写入 `GeoContentTask` 所需字段。
+- raw response、prompt、token、secret、cookie、authorization 等字段在任意层级出现都会被拒绝。
+- 顶层 Content Backlog `priority` 只接受 `90`、`70`、`45`，非法值直接返回 `valid=false`，不静默 fallback。
 - 不新增 API。
 - 不写数据库。
 - 不创建真实按钮。
@@ -370,7 +374,30 @@ EvidenceMapItem
 
 写入前必须 server 端重新解析 tenant，不信任 client payload 中的 tenant/user 字段。
 
-## 14. 何时考虑 Prisma schema
+## 14. RepairTask Validator Hardening
+
+本轮加固的是未来写库前的纯函数安全闸门，不是写库实现。
+
+白名单输出：
+
+- 顶层只输出 `title`、`type`、`priority`、`sourceQuery`、`sourceReason`、`targetKeyword`、`targetAudience`、`recommendedAngle`、`evidenceJson`、`briefJson`。
+- `evidenceJson` 只输出 `source`、`trigger`、`relatedQuery`、`suggestedPage`、`nextSteps`、`repairTask`。
+- `evidenceJson.repairTask` 只输出 `taskType`、`priority`、`evidenceGap`、`suggestedPage`、`expectedImpact`、`effortLevel`、`nextSteps`。
+- `briefJson` 只输出 `audience`、`searchIntent`、`angle`、`differentiationTargets`、`forbiddenClaims`、`evidenceNeeded`、`outline`、`internalLinks`、`llmsNotes`。
+
+Priority 策略：
+
+- RepairTask 的 `P0` / `P1` / `P2` 仍由 `mapRepairTaskToContentTask` 映射为 Content Backlog 数值优先级。
+- 写库前 draft 只接受 `90`、`70`、`45`。
+- 非法 priority 代表 client payload 不可信，必须拒绝，而不是 fallback。
+
+使用边界：
+
+- `sanitizedDraft` 可作为未来 server action 的输入基线。
+- 它不能替代登录校验、tenant scope 校验、query/run 归属校验和幂等去重。
+- 本轮仍不新增 API route / server action，不调用 `prisma.geoContentTask.create`。
+
+## 15. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 

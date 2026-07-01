@@ -38,7 +38,8 @@
 11. 给 Evidence Map / AnswerSource / RepairTask / Run Comparison 生成置信度标签。
 12. 在 Evidence Detail Drawer 中展示每条 query 的系统推断依据。
 13. 为未来单条 RepairTask 创建能力执行安全设计审查。
-14. 未来与线索做弱归因匹配。
+14. 加固 `validateRepairTaskDraft`，确保未来写库前只接受白名单字段和合法 priority。
+15. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -53,6 +54,7 @@
 - Evidence Detail Drawer
 - RepairTask create safety design
 - RepairTask draft validation result
+- Hardened RepairTask draft validation result
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -82,6 +84,9 @@
 - Evidence Detail Drawer 不写入数据库，不创建真实 RepairTask，不展示完整 raw API response。
 - RepairTask create safety design 明确权限校验、字段校验、幂等去重、审计字段和 UI 安全文案。
 - `validateRepairTaskDraft` 单元测试通过。
+- `validateRepairTaskDraft` 使用显式白名单输出，不保留未知 `evidenceJson` / `briefJson` 字段。
+- 嵌套 raw response、secret、token、cookie、authorization 等字段会被拒绝。
+- 非法 Content Backlog priority 会返回 `valid=false`，不静默 fallback。
 - 本轮不接入真实数据库写入，不创建真实按钮。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
