@@ -15,6 +15,7 @@
 | GitHub 入口 | PR #18：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/18](https://github.com/qixin-portfolio/geo-monitor-saas/pull/18) |
 | 上一轮依赖 | PR #17 已合并到远端 main |
 | 实现 commit | `d2746ecd1dd275f6da239ff66471a03a19a45e8b` |
+| 当前 head commit | `12b91a018c820b7ac1ba6629d116a9a5dc39b9a9` |
 
 ## 本轮交接
 
@@ -103,9 +104,9 @@
 
 ### 下一步建议
 
-1. 完成本轮 test / typecheck / build / diff-check。
-2. 创建 PR，等待 ChatGPT 严格审查。
-3. PR 合并后，由用户确认 Human Gate，才允许进入 Evidence Detail Drawer 单条“加入修复任务池”按钮接入。
+1. 等待 ChatGPT / 用户审查 PR #18。
+2. PR #18 合并后，由用户确认 Human Gate，才允许进入 Evidence Detail Drawer 单条“加入修复任务池”按钮接入。
+3. 下一轮若接 UI，只允许单条按钮，并补充按钮级浏览器 QA。
 
 ---
 
