@@ -350,8 +350,8 @@ EvidenceMapItem
 - `evidenceJson`、`briefJson` 和嵌套 `repairTask` 都只保留未来写入 `GeoContentTask` 所需字段。
 - raw response、prompt、token、secret、cookie、authorization 等字段在任意层级出现都会被拒绝。
 - 顶层 Content Backlog `priority` 只接受 `90`、`70`、`45`，非法值直接返回 `valid=false`，不静默 fallback。
-- 不新增 API。
-- 不写数据库。
+- 已新增 `createEvidenceRepairTask` server action / server-only function，用于创建单条 `GeoContentTask`。
+- 不新增 API route。
 - 不创建真实按钮。
 - 不修改 Prisma schema。
 - 不生成 migration。
@@ -397,7 +397,35 @@ Priority 策略：
 - 它不能替代登录校验、tenant scope 校验、query/run 归属校验和幂等去重。
 - 本轮仍不新增 API route / server action，不调用 `prisma.geoContentTask.create`。
 
-## 15. 何时考虑 Prisma schema
+## 15. Minimal RepairTask Server Action
+
+本轮新增最小写入链路，但仍不改变数据模型。
+
+写入目标：
+
+- 复用 `GeoContentTask`。
+- `tenantId` 来自 server 端 tenant resolver。
+- `queryRunId` / `analysisId` 只在 server 端确认属于当前 tenant 后写入。
+- `sourceProvider` / `sourceModel` 只来自 server 端读取到的 `QueryRun`。
+- `evidenceJson` / `briefJson` 来自 `validateRepairTaskDraft` 后的白名单数据，并在写入前再次显式重建。
+
+幂等策略：
+
+- 当前没有 `idempotencyKey` 字段，也不新增 migration。
+- 先用 `tenantId`、`sourceQuery`、`type`、unfinished status 查询候选任务。
+- 再在应用层比较 `evidenceJson.repairTask.taskType`、`evidenceGap`、`suggestedPage`。
+- 如果匹配，返回 `duplicate=true` 和已有 `taskId`，不重复创建。
+- 由于没有 `queryId` 字段，当前用 server 端确认后的 `sourceQuery` 作为 query identity 的保守替代。
+
+边界：
+
+- 不接前端按钮。
+- 不做批量创建。
+- 不做自动修复。
+- 不做 Lead Attribution。
+- 不新增 Prisma schema，不生成 migration。
+
+## 16. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
