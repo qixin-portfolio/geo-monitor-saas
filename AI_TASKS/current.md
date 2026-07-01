@@ -7,43 +7,41 @@
 
 ## 任务名称
 
-RepairTask Server Action Manual QA Execution：接 UI 按钮前的本地非生产手动 QA 执行记录
+Evidence Detail Drawer Add Single RepairTask Button：接入单条“加入修复任务池”按钮
 
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/18](https://github.com/qixin-portfolio/geo-monitor-saas/pull/18)
-- 分支：`codex/repair-task-manual-qa-execution`
-- 基线：远端 `main`，已包含 PR #17。
-- 实现 commit：`d2746ecd1dd275f6da239ff66471a03a19a45e8b`
-- 当前 head commit：`12b91a018c820b7ac1ba6629d116a9a5dc39b9a9`
-- 当前状态：PR 已创建，等待人工审查与合并确认。
+- PR：待创建。
+- 分支：`codex/repair-task-single-button`
+- 基线：远端 `main`，已包含 PR #18。
+- 实现 commit：待提交。
+- 当前状态：实现中，等待验证、提交、创建 PR。
 
 ## 背景
 
-PR #17 已进入 main，并新增 Manual QA 记录文档。
-当前本地环境已准备好：
+PR #18 已合并到 main，并记录 `createEvidenceRepairTask` server action 在本地非生产环境完成 Manual QA：
 
-- `DATABASE_URL` host 为 `localhost`。
-- 写入库为本地测试库 `geo_monitor`。
-- Clerk 测试用户已绑定到 fake Tenant A / Tenant B。
-- fake Query / RunBatch / QueryRun / QueryRunAnalysis 已由本地 seed 准备。
-- QA payload 位于仓库外 `/private/tmp/repair-task-manual-qa-payloads.local.json`。
+- 15 pass / 0 fail / 0 blocked。
+- QA 环境为 `localhost:5432` 本地测试库。
+- 未使用真实客户数据、真实 raw AI response、手机号、微信号、邮箱、token 或 cookie。
 
-本轮执行 `createEvidenceRepairTask` 的 15 条 Manual QA 用例，并把结果写回仓库文档。
+本轮在 Evidence Detail Drawer 中接入单条“加入修复任务池”按钮，调用已通过 Manual QA 的 server action。
 
 ## 本次目标
 
-1. 执行前确认 `.env.local` 被忽略、DB host 为 `localhost`、payload 和 server action 存在。
-2. 使用仓库外 runner 调用真实 `createEvidenceRepairTask` server action。
-3. 覆盖 15 条 QA Gate 用例。
-4. 更新 `docs/qa/repair-task-server-action-manual-qa-record.md`。
-5. 更新产品、架构、数据模型、Loop 和 handoff 文档。
-6. PR #18 已创建，等待 ChatGPT / 用户审查。
+1. 在 RepairTask Draft 区域新增单条“加入修复任务池”按钮。
+2. 点击按钮后先展示确认弹窗，不直接写库。
+3. 用户确认后调用 `createEvidenceRepairTask`。
+4. 前端只传最小 draft、`queryId`、`queryRunId`、`analysisId`。
+5. 不传 `tenantId`、raw answer、完整 AI response、token、cookie、secret 或未知字段。
+6. 处理 success / duplicate / validation / permission / unknown error 安全提示。
+7. 更新产品、架构、数据模型、Loop 和 handoff 文档。
 
 ## 修改范围
 
-- `docs/qa/repair-task-server-action-manual-qa-record.md`
+- `src/app/dashboard/evidence-map/evidence-detail-drawer.tsx`
+- `src/app/dashboard/evidence-map/page.tsx`
 - `docs/architecture/repair-task-create-safety-design.md`
 - `docs/product/evidence-led-geo-monitor-v1.1.md`
 - `docs/architecture/evidence-chain-data-model.md`
@@ -53,25 +51,16 @@ PR #17 已进入 main，并新增 Manual QA 记录文档。
 
 ## 禁止事项
 
-- 不使用生产环境。
-- 不使用真实客户数据。
-- 不使用真实 raw AI response。
-- 不使用真实手机号、微信号、邮箱、token、cookie。
-- 不打印完整 `DATABASE_URL`。
-- 不打印 Clerk secret、token、cookie 或完整 Clerk user id。
-- 不提交 `.env.local`、数据库连接串、账号密码。
-- 不提交本地 seed 脚本。
-- 不提交仓库外 payload / runner。
-- 不自动合并 PR。
-- 不擅自修改生产部署、数据库、认证、支付配置。
+- 不修改 `.env`。
 - 不修改 Prisma schema。
 - 不生成 migration。
-- 不修改 env。
 - 不新增 public API route。
-- 不接前端真实按钮。
+- 不新增新的 server action 写库逻辑。
 - 不新增新的写库路径。
+- 不传或信任 client `tenantId`。
+- 不传 raw answer、完整 AI response、token、cookie、secret。
 - 不做批量创建。
-- 不做无人值守执行修复。
+- 不做无人确认执行。
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不做全平台接入。
@@ -81,40 +70,40 @@ PR #17 已进入 main，并新增 Manual QA 记录文档。
 
 ## 验收标准
 
-- [x] 已确认 `.env.local` 被 git ignore。
-- [x] 已确认 `DATABASE_URL` host 为 `localhost`。
-- [x] 已确认 payload 文件存在于仓库外。
-- [x] 已确认 server action 文件存在。
-- [x] 已执行 15 条 Manual QA 用例。
-- [x] 15 条用例通过，0 失败，0 blocked。
-- [x] 合法 draft 创建单条 fake `GeoContentTask`。
-- [x] 重复创建返回 `duplicate=true`，不重复写库。
-- [x] 跨 tenant query / run / analysis 均被拒绝。
-- [x] raw response / secret-like payload 均被拒绝或未入库。
-- [x] 创建后的任务只在当前 tenant 范围内可见。
-- [x] 写入字段未发现 raw response、prompt、token、secret、cookie 或 DB URL 模式。
-- [x] 不新增前端真实按钮。
-- [x] 不新增 public API route。
-- [x] 不新增新的写库路径。
-- [x] 不修改 Prisma schema。
-- [x] 不生成 migration。
-- [x] 不修改 env。
-- [x] `pnpm test:unit` 通过，19 个文件 / 94 个测试。
-- [x] `pnpm typecheck` 通过。
-- [x] `pnpm build` 通过。
-- [x] `git diff --check` 通过。
-- [x] PR 描述已更新。
-- [x] `AI_TASKS/handoff.md` 已更新。
+- [ ] PR #18 已进入 main。
+- [ ] Evidence Detail Drawer 显示单条“加入修复任务池”按钮。
+- [ ] 点击按钮先显示确认弹窗。
+- [ ] 确认弹窗文案说明系统推断，并非第三方平台确认的来源结论。
+- [ ] 用户确认后才调用 `createEvidenceRepairTask`。
+- [ ] 前端不传 `tenantId`。
+- [ ] 前端只传最小安全 payload。
+- [ ] success 显示“已加入修复任务池。”。
+- [ ] duplicate 显示“该修复任务已存在，未重复创建。”。
+- [ ] validation error 显示“当前任务信息不足，暂时无法加入修复任务池。”。
+- [ ] permission / tenant error 显示“当前账号无权创建该任务。”。
+- [ ] unknown error 显示“暂时无法创建任务，请稍后重试。”。
+- [ ] 不展示原始 error stack、raw API response 或数据库错误。
+- [ ] 不新增 public API route。
+- [ ] 不新增新的写库路径。
+- [ ] 不修改 Prisma schema。
+- [ ] 不生成 migration。
+- [ ] 不修改 env。
+- [ ] `pnpm test:unit` 通过。
+- [ ] `pnpm typecheck` 通过。
+- [ ] `pnpm build` 通过。
+- [ ] `git diff --check` 通过。
+- [ ] PR 描述已更新。
+- [ ] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
 - 判断：需要。
-- 依据：RepairTask 写库能力已经存在，接 UI 前必须有可重复、可验证、可停止、可追责的 QA 记录。
+- 依据：本轮把已通过 Manual QA 的 server action 暴露为用户主动触发的 UI 写库入口，必须可验证、可停止、可追踪。
 
 ## 是否需要 Human Gate
 
 - 判断：需要。
-- 原因：虽然本地 server action 级 Manual QA 已通过，但下一轮如果把“加入修复任务池”按钮暴露给用户，会触发真实数据库写入，必须由用户确认后再继续。
+- 原因：本轮只创建 PR，不自动合并；按钮接入后仍需要审查和后续按钮级浏览器 QA。
 
 ## 交付格式
 

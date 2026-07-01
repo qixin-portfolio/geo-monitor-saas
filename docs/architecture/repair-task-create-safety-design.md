@@ -1,29 +1,29 @@
 # RepairTask Create Button Safety Design
 
 > 本文是安全设计与接口方案。当前已进入最小 server action 基础能力，
-> 但仍不实现真实前端按钮，不做批量创建，不修改 Prisma schema，不生成 migration。
+> 并在 Evidence Detail Drawer 中接入单条“加入修复任务池”按钮；本轮不做批量创建，
+> 不修改 Prisma schema，不生成 migration，不新增新的写库路径。
 
 ## 1. 当前状态
 
-- Evidence Map 是只读页面。
-- Evidence Detail Drawer 只展示 derived data。
+- Evidence Map 仍以证据浏览为主，不提供批量创建。
+- Evidence Detail Drawer 已接入单条“加入修复任务池”按钮。
 - `RepairTaskDraft` 由 `EvidenceMapItem` 纯函数派生。
 - `ContentBacklogTaskDraft` 由 `RepairTaskDraft` 纯函数映射。
-- 当前只在页面展示“可进入修复任务池”的只读语义。
 - 已新增 server-only 单条创建能力：`createEvidenceRepairTask`。
-- 该能力只在 server 端创建一条 `GeoContentTask`，尚未接入 UI 按钮。
-- 尚未创建真实“加入修复任务池”按钮。
+- Drawer 按钮必须由用户主动点击并确认后，才调用 `createEvidenceRepairTask` 创建一条 `GeoContentTask`。
+- 按钮不新增 public API route，不新增 server action 写库路径，不传 `tenantId`。
 
-## 2. 未来创建任务的数据流
+## 2. 创建任务的数据流
 
-建议链路：
+当前链路：
 
 ```text
 EvidenceMapItem
 → RepairTaskDraft
 → ContentTaskDraft
 → validateRepairTaskDraft
-→ validated server action / API
+→ createEvidenceRepairTask server action
 → tenant scoped GeoContentTask
 ```
 
@@ -55,7 +55,7 @@ EvidenceMapItem
 - 输入：`draft`、可选 `queryId`、`queryRunId`、`analysisId`
 - 输出：`success`、`taskId`、`duplicate`、`errors`
 - 所有 database create 必须发生在 server 端 tenant scoped 逻辑内。
-- 不新增前端按钮，不新增 API route。
+- Evidence Detail Drawer 只复用该 action，不新增 API route。
 
 ## 4. 字段校验要求
 
@@ -93,7 +93,7 @@ Validator Hardening 后的约束：
 
 ## 4.1 Minimal RepairTask Server Action
 
-本轮新增 `createEvidenceRepairTask`，作为未来 UI 按钮的 server 端基础能力。
+本轮之前已新增 `createEvidenceRepairTask`，作为 UI 按钮的 server 端基础能力。
 
 能力范围：
 
@@ -108,9 +108,8 @@ Validator Hardening 后的约束：
 
 当前仍不做：
 
-- 不接前端按钮。
 - 不做批量创建。
-- 不做无人值守执行修复。
+- 不做无人确认执行修复。
 - 不新增 API route。
 - 不新增 Prisma schema 字段。
 - 不生成 migration。
@@ -123,7 +122,7 @@ QA Gate 范围：
 
 - 新增人工 QA 清单：`docs/qa/repair-task-server-action-qa-gate.md`。
 - 确认 action 仍是 server-only，不新增 public API route。
-- 确认 UI 仍未接入真实按钮。
+- QA Gate 当轮确认 UI 尚未接入前端按钮。
 - 确认不新增新的写库路径。
 - 确认 tenant 校验、query / run / analysis 归属校验和幂等去重可人工复核。
 - 确认 `sourceReason`、`evidenceJson`、`briefJson` 不写入 raw response、prompt、token、secret 或隐私字段。
@@ -136,7 +135,7 @@ UI 接入前置条件：
 - 仍然只允许单条创建。
 - UI 必须有确认弹窗。
 - UI 必须提示“系统推断，不代表官方来源结论”。
-- UI 文案不得使用“无人值守执行修复”等绝对化表述。
+- UI 文案不得使用“无人确认执行修复”等绝对化表述。
 
 ## 4.3 RepairTask Server Action Manual QA
 
@@ -156,12 +155,32 @@ QA Gate 合并后，必须在非生产环境执行手动 QA，并把执行状态
 
 Manual QA 通过后仍然保留以下 UI 接入边界：
 
-- 本轮不接前端真实按钮。
 - 本轮不允许批量创建。
 - 本轮不新增新的写库路径。
 - 本轮不把该能力作为已完成 UI 可用能力对外描述。
-- 下一轮接入按钮前仍需 Human Gate。
 - 按钮接入后还需要浏览器端到端 QA，覆盖确认弹窗、重复提示、失败提示和 tenant 切换体验。
+
+## 4.4 Evidence Detail Drawer 单条按钮接入
+
+本轮在 Evidence Detail Drawer 的 RepairTask Draft 区域接入单条“加入修复任务池”按钮。
+
+按钮边界：
+
+- 仅支持用户主动点击后创建单条任务。
+- 点击按钮后必须先显示确认弹窗，不能直接写库。
+- 确认文案说明任务来自系统推断，并非第三方平台确认的来源结论。
+- 前端只传最小 Content Backlog draft、`queryId`、`queryRunId`、`analysisId`。
+- 前端不传 `tenantId`，不传 raw answer，不传完整 AI response，不传 token / cookie / secret。
+- server action 继续使用 `validateRepairTaskDraft`、tenant context、query/run/analysis 归属校验和 duplicate 逻辑。
+- 成功、duplicate、validation、permission 和未知错误都显示安全提示，不展示原始 stack 或数据库错误。
+
+当前仍不做：
+
+- 不做批量创建。
+- 不做无人确认执行修复。
+- 不新增 public API route。
+- 不新增新的写库路径。
+- 不做 Lead Attribution、PDF 或全平台接入。
 
 ## 5. 幂等去重要求
 
@@ -216,7 +235,7 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 按钮不要写：
 
-- 无人值守执行修复
+- 无人确认执行修复
 - 一键修复
 - 生成真实归因
 - 已创建任务
@@ -227,17 +246,18 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 确认弹窗建议：
 
-> 该任务由系统根据当前 AI 答案和来源信息推断生成，不代表官方来源结论。创建后会进入 GEO 修复任务池，可由人工继续编辑、确认和执行。
+> 该任务由系统根据当前 AI 答案、来源信息和证据缺口推断生成，并非第三方平台确认的来源结论。加入后你可以在 GEO 修复任务中继续编辑和确认。
 
 成功反馈建议：
 
 - 已加入修复任务池。
-- 已存在相同修复任务，未重复创建。
+- 该修复任务已存在，未重复创建。
 
 失败反馈建议：
 
-- 当前证据不足，暂不能创建任务。
-- 任务字段校验失败，请刷新后重试。
+- 当前任务信息不足，暂时无法加入修复任务池。
+- 当前账号无权创建该任务。
+- 暂时无法创建任务，请稍后重试。
 
 ## 8. 不做事项
 
@@ -245,27 +265,25 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 - Prisma schema 修改。
 - migration。
-- 真实按钮。
 - 批量创建。
-- 自动执行修复。
+- 无人确认执行修复。
 - 外部 API 调用。
 - Lead Attribution。
 - PDF 导出。
 - 全平台接入。
 - 自动部署。
 
-## 9. 下一轮 UI 接入建议
+## 9. 下一轮 QA 建议
 
-下一轮如果进入 UI，建议只接入单条按钮，不做批量创建：
+下一轮建议审查按钮级浏览器 QA，不做批量创建：
 
-1. Evidence Detail Drawer 中展示“加入修复任务池”按钮。
-2. 点击前显示确认弹窗，说明任务由系统推断生成，不代表官方来源结论。
-3. 前端只提交最小 draft 和 query/run 标识。
-4. server action 继续重新校验 tenant、payload 和幂等。
-5. 成功后提示 created / duplicate，不自动跳转批量流程。
+1. 验证 Evidence Detail Drawer 的确认弹窗、取消、loading、success、duplicate 和 error 状态。
+2. 验证按钮只提交最小 draft 和 query/run/analysis 标识。
+3. 验证 server action 继续重新校验 tenant、payload 和幂等。
+4. 验证 Content Backlog 只显示当前 tenant 的任务。
+5. 继续禁止批量创建和无人确认执行。
 
 仍需 Human Gate：
 
-- 是否展示真实按钮给所有用户。
 - 是否需要新增 idempotency schema。
 - 是否把按钮限制为特定 plan / tenant。

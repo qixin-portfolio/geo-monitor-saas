@@ -352,7 +352,7 @@ EvidenceMapItem
 - 顶层 Content Backlog `priority` 只接受 `90`、`70`、`45`，非法值直接返回 `valid=false`，不静默 fallback。
 - 已新增 `createEvidenceRepairTask` server action / server-only function，用于创建单条 `GeoContentTask`。
 - 不新增 API route。
-- 不创建真实按钮。
+- 该轮不创建前端按钮。
 - 不修改 Prisma schema。
 - 不生成 migration。
 
@@ -419,9 +419,9 @@ Priority 策略：
 
 边界：
 
-- 不接前端按钮。
+- 该轮不接前端按钮。
 - 不做批量创建。
-- 不做无人值守执行修复。
+- 不做无人确认执行修复。
 - 不做 Lead Attribution。
 - 不新增 Prisma schema，不生成 migration。
 
@@ -433,7 +433,7 @@ QA Gate 覆盖：
 
 - `createEvidenceRepairTask` 仍是 server 端单条创建能力。
 - 不新增 public API route。
-- 不新增前端真实按钮。
+- 该轮不新增前端按钮。
 - 不新增新的写库路径。
 - 人工验证 tenant scope、query / run / analysis 归属校验、validator 拒绝策略和幂等去重。
 - 人工检查 `sourceReason`、`evidenceJson`、`briefJson` 不包含 raw response、prompt、token、secret、cookie、手机号、微信号或邮箱。
@@ -462,12 +462,51 @@ Manual QA 记录：
 - 不新增 Prisma schema 字段。
 - 不生成 migration。
 - 不新增 public API route。
-- 不新增前端真实按钮。
+- 该轮不新增前端按钮。
 - 不新增新的写库路径。
 - 本轮只通过现有 `GeoContentTask` 字段验证单条创建、duplicate 和 tenant 隔离。
-- 下一轮 UI 按钮接入前仍需 Human Gate 和按钮级浏览器 QA。
+- 后续 UI 按钮接入前仍需 Human Gate 和按钮级浏览器 QA。
 
-## 18. 何时考虑 Prisma schema
+## 18. Evidence Detail Drawer 单条按钮
+
+本轮接入 Evidence Detail Drawer 的单条“加入修复任务池”按钮，但仍不改变数据模型。
+
+数据流：
+
+```text
+EvidenceMapItem
+→ RepairTaskDraft
+→ ContentBacklogTaskDraft
+→ Evidence Detail Drawer confirmation
+→ createEvidenceRepairTask
+→ tenant scoped GeoContentTask
+```
+
+写入目标仍为现有 `GeoContentTask`：
+
+- `tenantId` 只能来自 server 端 tenant resolver。
+- `queryRunId` / `analysisId` 仍由 server action 按当前 tenant 校验后写入。
+- `title`、`type`、`priority`、`sourceQuery`、`sourceReason`、`targetKeyword`、`targetAudience`、`recommendedAngle` 继续来自 validator 后的安全 draft。
+- `evidenceJson` / `briefJson` 继续使用白名单字段承载 evidence gap、suggested page、next steps 和 brief 摘要。
+
+本轮不新增：
+
+- 不新增 Prisma schema 字段。
+- 不生成 migration。
+- 不新增 `idempotencyKey` 字段。
+- 不新增 public API route。
+- 不新增新的 server action 写库路径。
+- 不支持批量创建或无人确认执行。
+
+前端按钮只负责：
+
+- 显示确认弹窗。
+- 传递最小 draft、`queryId`、`queryRunId`、`analysisId`。
+- 展示 success / duplicate / validation / permission / unknown error 的安全提示。
+
+真正的 tenant 校验、query/run/analysis 归属校验、validator 和 duplicate 逻辑仍在 `createEvidenceRepairTask` 内完成。
+
+## 19. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
