@@ -12,11 +12,11 @@ Minimal RepairTask Server Action：最小安全修复任务创建能力
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/15](https://github.com/qixin-portfolio/geo-monitor-saas/pull/15)
 - 分支：`codex/minimal-repair-task-action`
 - 基线：远端 `main`，已包含 PR #14。
-- 实现 commit：待提交
-- 当前状态：实现与验证已完成，等待提交并创建 PR。
+- 实现 commit：`00bdc27b8b5adf5c10e7227b6f882dd6d690b97d`
+- 当前状态：PR 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -82,6 +82,8 @@ PR #14 已进入 main，`validateRepairTaskDraft` 已加固为写库前安全闸
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
+- [x] PR 描述已更新。
+- [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 

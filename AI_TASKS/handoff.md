@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | Minimal RepairTask Server Action：最小安全修复任务创建能力 |
 | 执行分支 | `codex/minimal-repair-task-action` |
-| 状态 | 实现与验证已完成，等待提交并创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #15：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/15](https://github.com/qixin-portfolio/geo-monitor-saas/pull/15) |
 | 上一轮依赖 | PR #14 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `00bdc27b8b5adf5c10e7227b6f882dd6d690b97d` |
 
 ## 本轮交接
 
@@ -55,8 +55,7 @@
 
 ### 下一步建议
 
-1. 完成 `pnpm test:unit`、`pnpm build` 和 `git diff --check`。
-2. 创建 PR 后等待人工审查。
+1. 等待人工审查 PR #15。
 3. 下一轮如接入 Evidence Detail Drawer / Evidence Map 真实按钮，必须再次进入 Human Gate。
 4. UI 按钮只建议做单条创建，不做批量创建或自动修复。
 
