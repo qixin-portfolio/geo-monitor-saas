@@ -11,11 +11,11 @@
 |------|------|
 | 当前任务 | Evidence Detail Drawer Add Single RepairTask Button：接入单条“加入修复任务池”按钮 |
 | 执行分支 | `codex/repair-task-single-button` |
-| 状态 | 实现中，等待验证、提交、创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #19：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/19](https://github.com/qixin-portfolio/geo-monitor-saas/pull/19) |
 | 上一轮依赖 | PR #18 已合并到远端 main，Manual QA 为 15 pass / 0 fail / 0 blocked |
-| 实现 commit | 待提交 |
-| 当前 head commit | 待提交 |
+| 实现 commit | `e3dd998cf2bbdf8f86d854126d7ba57a46cf3f24` |
+| 当前 head commit | 以 PR #19 页面为准 |
 
 ## 本轮交接
 
@@ -71,10 +71,10 @@
 
 ### 验证记录
 
-- `pnpm test:unit`：待执行。
-- `pnpm typecheck`：待执行。
-- `pnpm build`：待执行。
-- `git diff --check`：待执行。
+- `pnpm test:unit`：通过，19 个文件 / 94 个测试。
+- `pnpm typecheck`：通过。
+- `pnpm build`：通过。
+- `git diff --check`：通过。
 
 ### 风险与注意事项
 
@@ -85,9 +85,8 @@
 
 ### 下一步建议
 
-1. 完成本轮验证并创建 PR。
-2. 等待 ChatGPT / 用户审查 PR，不自动合并。
-3. PR 合并后，在非生产环境补按钮级浏览器 QA。
+1. 等待 ChatGPT / 用户审查 PR #19，不自动合并。
+2. PR 合并后，在非生产环境补按钮级浏览器 QA。
 
 ---
 
