@@ -115,6 +115,29 @@ Validator Hardening 后的约束：
 - 不新增 Prisma schema 字段。
 - 不生成 migration。
 
+## 4.2 RepairTask Server Action QA Gate
+
+`createEvidenceRepairTask` 已经具备 server 端单条写库能力。接入 Evidence Map / Evidence Detail Drawer 按钮前，必须先通过 QA Gate。
+
+QA Gate 范围：
+
+- 新增人工 QA 清单：`docs/qa/repair-task-server-action-qa-gate.md`。
+- 确认 action 仍是 server-only，不新增 public API route。
+- 确认 UI 仍未接入真实按钮。
+- 确认不新增新的写库路径。
+- 确认 tenant 校验、query / run / analysis 归属校验和幂等去重可人工复核。
+- 确认 `sourceReason`、`evidenceJson`、`briefJson` 不写入 raw response、prompt、token、secret 或隐私字段。
+
+UI 接入前置条件：
+
+- QA Gate 文档已合并。
+- 手动 QA 使用非生产环境、测试 tenant、测试账号和脱敏样本完成。
+- server action 不暴露 public API。
+- 仍然只允许单条创建。
+- UI 必须有确认弹窗。
+- UI 必须提示“系统推断，不代表平台官方归因”。
+- UI 文案不得使用“自动修复”等绝对化表述。
+
 ## 5. 幂等去重要求
 
 同一 tenant 在短时间内不应重复创建多条相同任务。

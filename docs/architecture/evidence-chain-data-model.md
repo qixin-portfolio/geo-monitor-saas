@@ -425,7 +425,26 @@ Priority 策略：
 - 不做 Lead Attribution。
 - 不新增 Prisma schema，不生成 migration。
 
-## 16. 何时考虑 Prisma schema
+## 16. RepairTask Server Action QA Gate
+
+本轮不新增模型，也不改变 `GeoContentTask` 写入链路，只为 PR #15 的 server action 建立 UI 接入前 QA 闸门。
+
+QA Gate 覆盖：
+
+- `createEvidenceRepairTask` 仍是 server 端单条创建能力。
+- 不新增 public API route。
+- 不新增前端真实按钮。
+- 不新增新的写库路径。
+- 人工验证 tenant scope、query / run / analysis 归属校验、validator 拒绝策略和幂等去重。
+- 人工检查 `sourceReason`、`evidenceJson`、`briefJson` 不包含 raw response、prompt、token、secret、cookie、手机号、微信号或邮箱。
+
+当前数据模型限制：
+
+- `GeoContentTask` 没有独立 `queryId` 或 `idempotencyKey` 字段。
+- 当前幂等仍使用 `tenantId`、`sourceQuery`、`type`、unfinished status 和 `evidenceJson.repairTask` 做保守去重。
+- 强幂等或审计字段需要单独 schema 评估，本轮不处理。
+
+## 17. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 
