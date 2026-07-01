@@ -44,7 +44,8 @@
 17. 记录 server action 手动 QA 状态；没有非生产环境和测试数据时必须标记未执行，不得伪造通过。
 18. 在本地非生产环境执行 server action 级 Manual QA，验证 15 条接 UI 前安全用例。
 19. 在 Evidence Detail Drawer 中接入单条“加入修复任务池”按钮，用户确认后复用已 QA 的 server action。
-20. 未来与线索做弱归因匹配。
+20. 在本地非生产环境执行按钮级浏览器 QA，验证确认弹窗、取消、success、duplicate、permission error、Content Backlog 可见性和 tenant 隔离显示。
+21. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -65,6 +66,7 @@
 - RepairTask server action manual QA record
 - RepairTask server action manual QA execution result
 - Evidence Detail Drawer single RepairTask create button
+- RepairTask button browser QA record
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -114,6 +116,10 @@
 - 按钮只传最小 draft、`queryId`、`queryRunId`、`analysisId`，不传 `tenantId`、raw answer、完整 AI response、token、cookie 或 secret。
 - 按钮提供 success、duplicate、validation、permission 和 unknown error 安全提示，不展示原始 stack 或数据库错误。
 - 本轮不做批量创建，不做无人确认执行修复。
+- RepairTask button browser QA 已在本地非生产环境完成 15 条用例。
+- Button Browser QA 覆盖 Drawer 打开、RepairTask Draft 展示、无直接写库、确认弹窗、取消不写库、确认创建、success、duplicate、低置信文案、状态不串、permission error、Content Backlog 可见性、Tenant B 隔离和敏感字段扫描。
+- Button Browser QA 结果为 15 pass / 0 fail / 0 blocked。
+- Button Browser QA 的 Tenant B 切换通过 development dev fallback 模拟；staging 前仍需 Clerk 测试账号 A / B 真实登录、退出和隔离复测。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。

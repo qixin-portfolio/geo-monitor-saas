@@ -9,52 +9,54 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Evidence Detail Drawer Add Single RepairTask Button：接入单条“加入修复任务池”按钮 |
-| 执行分支 | `codex/repair-task-single-button` |
-| 状态 | PR 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #19：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/19](https://github.com/qixin-portfolio/geo-monitor-saas/pull/19) |
-| 上一轮依赖 | PR #18 已合并到远端 main，Manual QA 为 15 pass / 0 fail / 0 blocked |
-| 实现 commit | `e3dd998cf2bbdf8f86d854126d7ba57a46cf3f24` |
-| 当前 head commit | 以 PR #19 页面为准 |
+| 当前任务 | RepairTask Button Browser QA：Evidence Detail Drawer 单条按钮浏览器级 QA |
+| 执行分支 | `codex/repair-task-button-browser-qa` |
+| 状态 | PR #20 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #20：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/20](https://github.com/qixin-portfolio/geo-monitor-saas/pull/20) |
+| 上一轮依赖 | PR #19 已合并到远端 main，单条按钮已接入 |
+| 实现 commit | `a23c05184c888a977c186a86c027bc1328d614f9` |
+| 当前 head commit | 以 PR #20 页面为准 |
+| QA 环境 | `localhost:5432` 本地测试库 `geo_monitor` |
+| QA 结果 | 15 pass / 0 fail / 0 blocked |
+| 是否使用真实客户数据 | 否 |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `src/app/dashboard/evidence-map/evidence-detail-drawer.tsx`：在 RepairTask Draft 区域接入单条“加入修复任务池”按钮、确认弹窗、loading 和结果提示；调用已通过 Manual QA 的 `createEvidenceRepairTask`。
-- `src/app/dashboard/evidence-map/page.tsx`：向 Drawer 传入 `queryId`、`queryRunId`、`analysisId` 和安全的 `contentTaskDraft`；修正文案为“人工确认后创建单条任务”。
-- `docs/architecture/repair-task-create-safety-design.md`：记录单条按钮接入边界、payload 策略和后续按钮级 QA。
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录本轮新增单条按钮及安全边界。
-- `docs/architecture/evidence-chain-data-model.md`：记录本轮复用现有 `GeoContentTask`，不改 schema。
-- `docs/loops/evidence-led-geo-loop.md`：将单条按钮纳入 Evidence-led GEO Loop。
-- `AI_TASKS/current.md`：记录本轮任务。
+- `docs/qa/repair-task-button-browser-qa-record.md`：新增按钮级浏览器 QA 记录，覆盖 15 条用例和本地 dev 限制。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 PR #19 后的本地按钮 QA 结果和 staging 前置复测建议。
+- `docs/architecture/repair-task-create-safety-design.md`：补充按钮浏览器 QA 结果、安全边界和本地限制。
+- `docs/loops/evidence-led-geo-loop.md`：将 Button Browser QA 纳入 Evidence-led GEO Loop 的输出和验收。
+- `AI_TASKS/current.md`：记录本轮任务、边界、验收和限制。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
-### 已实现行为
+### QA 执行摘要
 
-- Drawer 中新增“加入修复任务池”按钮。
-- 点击按钮先显示确认弹窗，不直接写库。
-- 确认弹窗文案说明任务由系统推断生成，并非第三方平台确认的来源结论。
-- 用户确认后调用 `createEvidenceRepairTask`。
-- 前端只传最小 draft、`queryId`、`queryRunId`、`analysisId`。
-- 前端不传 `tenantId`。
-- 前端不传 raw answer、完整 AI response、token、cookie、secret 或未知字段。
-- success 显示“已加入修复任务池。”。
-- duplicate 显示“该修复任务已存在，未重复创建。”。
-- validation error 显示“当前任务信息不足，暂时无法加入修复任务池。”。
-- permission / tenant error 显示“当前账号无权创建该任务。”。
-- unknown error 显示“暂时无法创建任务，请稍后重试。”。
-- 不展示原始 error stack、raw API response 或数据库错误。
+- 本地 `DATABASE_URL` host 为 `localhost`，未打印完整连接串。
+- 使用 fake Tenant A / Tenant B、fake Query / QueryRun / QueryRunAnalysis。
+- 打开 Evidence Detail Drawer 不直接写库。
+- 点击“加入修复任务池”先出现确认弹窗。
+- 点击取消不创建任务。
+- 点击确认创建单条 `GeoContentTask` 并显示“已加入修复任务池。”。
+- 重复创建返回 duplicate，不重复写库。
+- permission error 显示“当前账号无权创建该任务。”，不展示 stack、Prisma 错误或 raw server error。
+- Content Backlog 中 Tenant A 可见新任务。
+- Tenant B 隔离显示不包含 Tenant A 任务。
+- 创建任务扫描未发现 raw response、prompt、token、secret、cookie、authorization 或数据库连接串模式。
 
 ### 安全边界
 
-- 复用 PR #15 已新增、PR #18 已完成 Manual QA 的 `createEvidenceRepairTask`。
-- 不新增 public API route。
-- 不新增新的 server action 写库逻辑。
-- 不新增新的写库路径。
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不修改 env。
+- 不提交 `.env.local`。
+- 不新增 public API route。
+- 不新增新的写库路径。
+- 不修改 `createEvidenceRepairTask` server action。
+- 不修改 validator。
+- 不提交 seed 脚本、payload 文件或仓库外 QA runner。
+- 不使用真实客户数据。
 - 不做批量创建。
 - 不做无人确认执行。
 - 不做 Lead Attribution。
@@ -62,12 +64,12 @@
 - 不做全平台接入。
 - 不自动部署。
 
-### Manual QA 前置条件
+### 本地限制
 
-- PR #18 已合并到 main。
-- Manual QA 环境为本地非生产 `localhost:5432` 测试库。
-- Manual QA 结果为 15 pass / 0 fail / 0 blocked。
-- 本轮 UI 接入仍需 PR 审查；合并后建议补按钮级浏览器 QA。
+- 本轮是 `NODE_ENV=development` 本地 QA，`src/proxy.ts` 会绕过 Clerk route protection。
+- dashboard 侧栏在 development 下显示固定 `D`，不展示 Clerk `UserButton`。
+- Tenant B 切换通过 fake DB 的 dev fallback 模拟，不等同于 staging 真实 Clerk 账号切换。
+- 下一轮如进入 staging 检查，必须使用 Clerk 测试账号 A / B 复测登录、退出和 tenant 隔离。
 
 ### 验证记录
 
@@ -78,15 +80,15 @@
 
 ### 风险与注意事项
 
-- PR #15 已引入 server 端单条 `GeoContentTask` 写库能力，本轮把它接到用户主动触发的 UI。
 - 幂等仍不是 DB unique constraint。
-- 本轮没有新增按钮级自动化测试；需依赖 typecheck/build 和后续人工浏览器 QA。
-- 后续 QA 应覆盖确认弹窗、取消、loading、success、duplicate、error 和 tenant 切换体验。
+- 本轮确认的是本地非生产按钮链路，不是 staging / production 验证。
+- staging 前仍需 Human Gate。
+- 后续不应直接进入批量创建、无人确认执行或生产 rollout。
 
 ### 下一步建议
 
-1. 等待 ChatGPT / 用户审查 PR #19，不自动合并。
-2. PR 合并后，在非生产环境补按钮级浏览器 QA。
+1. 等待 ChatGPT / 用户审查 PR #20，不自动合并。
+2. 人工审查 PR 后，再决定是否进入小范围 staging 发布检查。
 
 ---
 
@@ -108,3 +110,4 @@
 | 2026-07-01 | RepairTask Server Action QA Gate | PR #16 | 已合并 | 接 UI 前人工 QA Gate |
 | 2026-07-01 | RepairTask Server Action Manual QA Record | PR #17 | 已合并 | 记录未执行状态和 QA 前置条件 |
 | 2026-07-01 | RepairTask Server Action Manual QA Execution | PR #18 | 已合并 | 本地非生产 Manual QA 15 pass / 0 fail / 0 blocked |
+| 2026-07-01 | Evidence Detail Drawer Single RepairTask Button | PR #19 | 已合并 | 单条按钮、确认弹窗、安全提示，复用已 QA 的 server action |

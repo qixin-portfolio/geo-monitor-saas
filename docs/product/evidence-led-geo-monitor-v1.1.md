@@ -315,12 +315,42 @@ PR #18 的本地非生产 Manual QA 通过后，本轮在 Evidence Detail Drawer
 - `git diff --check` 通过。
 - 后续仍需按钮级浏览器 QA，覆盖确认、取消、loading、success、duplicate、error 和 tenant 切换体验。
 
+### RepairTask Button Browser QA 接入轮
+
+PR #19 合并后，本轮在本地非生产环境对 Evidence Detail Drawer 的单条“加入修复任务池”按钮执行浏览器级 QA。
+
+执行范围：
+
+- 使用本地 `localhost:5432` 测试库 `geo_monitor`。
+- 使用 fake Tenant A / Tenant B、fake Query / QueryRun / QueryRunAnalysis。
+- 通过浏览器访问本地 `/dashboard/evidence-map` 和 `/dashboard/content-backlog`。
+- 点击真实 Drawer 按钮、确认弹窗和取消 / 确认路径。
+- 继续复用 `createEvidenceRepairTask`，不新增 public API route 或新的写库路径。
+
+验证结果：
+
+- 15 条按钮级 QA 用例通过，0 失败，0 blocked。
+- 已验证打开 Drawer 不直接写库。
+- 已验证点击按钮后先弹确认，不会直接创建任务。
+- 已验证取消不创建任务。
+- 已验证确认后创建单条任务并显示“已加入修复任务池。”。
+- 已验证重复点击同一任务返回 duplicate，不重复写库。
+- 已验证权限错误只显示安全文案，不泄露 stack、Prisma 错误或 raw server error。
+- 已验证 Content Backlog 当前 tenant 可见，Tenant B 隔离不显示 Tenant A 任务。
+- 已验证任务内容未命中 raw response、prompt、token、secret、cookie 或数据库连接串模式。
+
+本地限制：
+
+- 本轮运行在 `NODE_ENV=development`，本地 dashboard 会绕过 Clerk route protection。
+- Tenant B 切换通过 fake DB 的 dev fallback 模拟，不等同于 staging 的真实 Clerk 账号切换。
+- 下一轮如进入 staging 发布检查，仍需 Human Gate，并补充 Clerk 测试账号 A / B 的真实登录、退出和 tenant 隔离复测。
+
 ### V1.2
 
 - 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
 - 继续校准 Evidence Confidence Label 的阈值和文案，避免把弱推断包装成事实。
 - 观察 Evidence Detail Drawer 是否能帮助用户复核每条 query 的判断依据。
-- 基于单条按钮接入结果补充按钮级浏览器 QA。
+- 基于本地按钮级浏览器 QA 结果，进入小范围 staging 检查前补 Clerk 测试账号切换复测。
 - 给每条 evidence gap 生成明确 next steps。
 - 评估“加入修复任务池”按钮是否需要 plan / tenant 级开关。
 
