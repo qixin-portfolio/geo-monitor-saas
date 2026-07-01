@@ -11,9 +11,11 @@
 |------|------|
 | 当前任务 | RepairTask Button Browser QA：Evidence Detail Drawer 单条按钮浏览器级 QA |
 | 执行分支 | `codex/repair-task-button-browser-qa` |
-| 状态 | 本地非生产 Browser QA 已执行，准备创建 PR |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR #20 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #20：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/20](https://github.com/qixin-portfolio/geo-monitor-saas/pull/20) |
 | 上一轮依赖 | PR #19 已合并到远端 main，单条按钮已接入 |
+| 实现 commit | `a23c05184c888a977c186a86c027bc1328d614f9` |
+| 当前 head commit | 以 PR #20 页面为准 |
 | QA 环境 | `localhost:5432` 本地测试库 `geo_monitor` |
 | QA 结果 | 15 pass / 0 fail / 0 blocked |
 | 是否使用真实客户数据 | 否 |
@@ -85,7 +87,7 @@
 
 ### 下一步建议
 
-1. 创建 PR 到 main，不自动合并。
+1. 等待 ChatGPT / 用户审查 PR #20，不自动合并。
 2. 人工审查 PR 后，再决定是否进入小范围 staging 发布检查。
 
 ---

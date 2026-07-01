@@ -12,10 +12,12 @@ RepairTask Button Browser QA：Evidence Detail Drawer 单条按钮浏览器级 Q
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/20](https://github.com/qixin-portfolio/geo-monitor-saas/pull/20)
 - 分支：`codex/repair-task-button-browser-qa`
 - 基线：远端 `main`，已包含 PR #19。
-- 当前状态：本地非生产 Browser QA 已执行，准备提交 QA 记录 PR。
+- 实现 commit：`a23c05184c888a977c186a86c027bc1328d614f9`
+- 当前 head commit：以 PR #20 页面为准。
+- 当前状态：PR #20 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -93,8 +95,8 @@ PR #19 已合并到 main，Evidence Detail Drawer 已接入单条“加入修复
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [ ] PR 已创建。
-- [ ] `AI_TASKS/handoff.md` 已更新为最终 PR 状态。
+- [x] PR 已创建。
+- [x] `AI_TASKS/handoff.md` 已更新为最终 PR 状态。
 
 ## 本地限制
 
