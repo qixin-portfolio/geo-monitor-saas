@@ -287,3 +287,42 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 - 是否需要新增 idempotency schema。
 - 是否把按钮限制为特定 plan / tenant。
+
+## 10. Button Browser QA 结果
+
+PR #19 合并后，已在本地非生产环境执行按钮级浏览器 QA。
+
+QA 范围：
+
+- 本地 `localhost:5432` 测试库 `geo_monitor`。
+- fake Tenant A / Tenant B。
+- fake Query / QueryRun / QueryRunAnalysis。
+- Evidence Detail Drawer 的真实按钮、确认弹窗、取消、确认、success、duplicate 和 permission error 路径。
+- Content Backlog 当前 tenant 可见性和 Tenant B 隔离显示。
+
+QA 结果：
+
+- 15 pass / 0 fail / 0 blocked。
+- 打开 Drawer 不写库。
+- 点击“加入修复任务池”先弹确认，不直接创建任务。
+- 点击取消不写库。
+- 点击确认只创建单条 `GeoContentTask`。
+- 重复确认返回 duplicate，不重复写库。
+- 权限错误显示安全文案，不暴露 stack、Prisma 错误或 raw server error。
+- 写入任务扫描未发现 raw response、prompt、token、secret、cookie、authorization 或数据库连接串模式。
+
+本地限制：
+
+- development 环境会绕过 Clerk route protection。
+- 本轮 Tenant B 切换通过 fake DB 的 dev fallback 模拟，不等同于 staging 的真实 Clerk 用户切换。
+- 进入 staging 或生产 rollout 前，仍需 Human Gate，并使用 Clerk 测试账号 A / B 复测登录、退出和 tenant 隔离。
+
+本轮仍未做：
+
+- schema 修改。
+- migration。
+- public API route。
+- 新的写库路径。
+- 批量创建。
+- 无人确认执行。
+- Lead Attribution、PDF 或全平台接入。
