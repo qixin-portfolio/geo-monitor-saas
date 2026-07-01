@@ -258,6 +258,34 @@ QA Gate 合并后，本轮只准备并记录手动 QA，不接 UI 按钮。
 
 本轮仍不新增前端按钮、不新增新的写库路径、不修改 schema、不生成 migration、不自动部署。
 
+### RepairTask Server Action Manual QA Execution 接入轮
+
+Manual QA 记录合并后，本轮在本地非生产环境执行 15 条 server action 级 QA 用例。
+
+执行范围：
+
+- 使用本地 `localhost:5432` 测试库 `geo_monitor`。
+- 使用 fake Tenant A / Tenant B、fake Query / RunBatch / QueryRun / QueryRunAnalysis。
+- 使用仓库外 payload 文件和仓库外 runner。
+- 调用真实 `createEvidenceRepairTask` server action。
+- 不新增 UI 按钮，不新增 public API route，不新增新的写库路径。
+
+验证结果：
+
+- 15 条 QA 用例通过，0 失败，0 blocked。
+- 已验证未登录、无 tenant、非法 priority、非法 taskType、raw response、secret-like 字段都会被拒绝或不入库。
+- 已验证跨 tenant query / run / analysis 会被拒绝。
+- 已验证合法 draft 只创建单条 `GeoContentTask`。
+- 已验证重复创建返回 `duplicate=true`，不重复写库。
+- 已验证创建后的任务只在当前 tenant 范围可见。
+- 已验证写入字段不包含 raw response、prompt、token、secret、cookie 或数据库连接串模式。
+
+当前判断：
+
+- 本地 server action 级 QA 已通过。
+- 这不等于按钮级浏览器端到端 QA 已完成。
+- 下一轮如接 Evidence Detail Drawer 的单条“加入修复任务池”按钮，仍需 Human Gate，并补充确认弹窗、loading、duplicate、失败提示和 tenant 切换体验验证。
+
 ### V1.2
 
 - 继续用更多真实 run 样本观察和校准 AnswerSource / Evidence Gap / Run Comparison。
