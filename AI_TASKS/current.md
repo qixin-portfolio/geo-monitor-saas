@@ -7,36 +7,35 @@
 
 ## 任务名称
 
-Minimal RepairTask Server Action：最小安全修复任务创建能力
+RepairTask Server Action QA Gate：修复任务创建按钮接入前 QA 闸门
 
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/15](https://github.com/qixin-portfolio/geo-monitor-saas/pull/15)
-- 分支：`codex/minimal-repair-task-action`
-- 基线：远端 `main`，已包含 PR #14。
-- 实现 commit：`00bdc27b8b5adf5c10e7227b6f882dd6d690b97d`
-- 当前状态：PR 已创建，等待人工审查与合并确认。
+- PR：待创建。
+- 分支：`codex/repair-task-qa-gate`
+- 基线：远端 `main`，已包含 PR #15。
+- 实现 commit：待提交。
+- 当前状态：验证通过，等待提交与 PR 创建。
 
 ## 背景
 
-PR #14 已进入 main，`validateRepairTaskDraft` 已加固为写库前安全闸门。
-本轮允许实现“加入修复任务池”的最小 server 端基础能力，但不接 UI 按钮、不做批量创建、不做自动修复。
+PR #15 已进入 main，并新增 `createEvidenceRepairTask` server action / server-only function。
+该能力已经可以在 server 端创建单条 tenant scoped `GeoContentTask`，但尚未接前端“加入修复任务池”按钮。
+
+本轮只做 QA Gate 和 UI 接入前安全准备，不新增按钮、不新增 public API route、不新增新的写库路径。
 
 ## 本次目标
 
-1. 审查现有 `GeoContentTask`、Content Backlog、tenant / auth 和任务创建逻辑。
-2. 新增 `createEvidenceRepairTask` server action / server-only function。
-3. server 端重新获取当前 tenant，不信任 client payload 中的 `tenantId`。
-4. 调用 `validateRepairTaskDraft`，只使用 `sanitizedDraft`。
-5. 如果传入 `queryId`、`queryRunId`、`analysisId`，必须确认属于当前 tenant。
-6. 只创建单条 `GeoContentTask`，并用现有字段做保守幂等去重。
-7. 更新产品、架构、Loop 和 handoff 文档。
+1. 审查现有 server action、validator、tenant 校验、query / run / analysis 归属校验和幂等去重策略。
+2. 新增 `docs/qa/repair-task-server-action-qa-gate.md`。
+3. 明确人工 QA 前置条件、QA 用例清单和 UI 接入前置条件。
+4. 更新产品、架构、数据模型、Loop 和 handoff 文档。
+5. 保持本轮不改 UI、不改 schema、不生成 migration、不新增写库路径。
 
 ## 修改范围
 
-- `src/app/dashboard/content-backlog/actions/create-evidence-repair-task.ts`
-- `src/app/dashboard/content-backlog/actions/create-evidence-repair-task.test.ts`
+- `docs/qa/repair-task-server-action-qa-gate.md`
 - `docs/architecture/repair-task-create-safety-design.md`
 - `docs/product/evidence-led-geo-monitor-v1.1.md`
 - `docs/architecture/evidence-chain-data-model.md`
@@ -53,7 +52,9 @@ PR #14 已进入 main，`validateRepairTaskDraft` 已加固为写库前安全闸
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不修改 env。
-- 不接 UI 真实按钮。
+- 不新增 public API route。
+- 不接前端真实按钮。
+- 不新增新的写库路径。
 - 不做批量创建。
 - 不做自动修复。
 - 不做 Lead Attribution。
@@ -65,15 +66,15 @@ PR #14 已进入 main，`validateRepairTaskDraft` 已加固为写库前安全闸
 
 ## 验收标准
 
-- [x] `GeoContentTask` 现有字段足够承载单条 RepairTask draft，不需要 schema。
-- [x] server action 只使用 server 端 tenant，不使用 payload tenantId。
-- [x] server action 调用 `validateRepairTaskDraft`，只使用 `sanitizedDraft`。
-- [x] `queryId` / `queryRunId` / `analysisId` 归属不匹配时拒绝。
-- [x] 非法 draft / 非法 priority / raw response 字段会拒绝。
-- [x] 合法 draft 可创建单条 `GeoContentTask`。
-- [x] 重复任务返回 `duplicate=true`，不重复创建。
-- [x] 不接前端按钮。
-- [x] 不做批量创建。
+- [x] 已确认 PR #15 server action 文件存在于 main。
+- [x] 已审查 `createEvidenceRepairTask` 当前 server-only 边界。
+- [x] 已新增 QA Gate 文档。
+- [x] 已记录人工 QA 前置条件。
+- [x] 已记录未登录、无 tenant、非法字段、跨 tenant、合法创建、重复创建和 tenant 隔离 QA 用例。
+- [x] 已记录 UI 接入前置条件和安全文案。
+- [x] 不新增前端真实按钮。
+- [x] 不新增 public API route。
+- [x] 不新增新的写库路径。
 - [x] 不修改 Prisma schema。
 - [x] 不生成 migration。
 - [x] 不修改 env。
@@ -82,18 +83,18 @@ PR #14 已进入 main，`validateRepairTaskDraft` 已加固为写库前安全闸
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [x] PR 描述已更新。
-- [x] `AI_TASKS/handoff.md` 已更新。
+- [ ] PR 描述已更新。
+- [ ] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
 - 判断：需要。
-- 依据：RepairTask 创建能力会反复触发字段校验、tenant 校验、幂等去重和写库安全审查，属于高价值、可验收、可回滚的工程循环。
+- 依据：RepairTask 写库能力已经存在，接 UI 前必须有可重复、可验证、可停止、可追责的 QA Gate。
 
 ## 是否需要 Human Gate
 
 - 判断：需要。
-- 原因：本轮新增 server 端真实写库能力，但不接 UI 按钮；下一轮如果要把按钮暴露给用户，必须再次进入 Human Gate。
+- 原因：下一轮如果把“加入修复任务池”按钮暴露给用户，会触发真实数据库写入，必须由用户确认后再继续。
 
 ## 交付格式
 

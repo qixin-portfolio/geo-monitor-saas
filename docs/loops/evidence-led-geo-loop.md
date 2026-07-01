@@ -40,7 +40,8 @@
 13. 为未来单条 RepairTask 创建能力执行安全设计审查。
 14. 加固 `validateRepairTaskDraft`，确保未来写库前只接受白名单字段和合法 priority。
 15. 通过最小 server action 创建单条 tenant scoped `GeoContentTask`。
-16. 未来与线索做弱归因匹配。
+16. 为最小 server action 建立 UI 接入前 QA Gate，人工验证 tenant、归属校验、幂等和安全字段。
+17. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -57,6 +58,7 @@
 - RepairTask draft validation result
 - Hardened RepairTask draft validation result
 - Minimal RepairTask server action result
+- RepairTask server action QA Gate
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -93,6 +95,8 @@
 - server action 不信任 client payload 中的 `tenantId`。
 - 如果传入 `queryId` / `queryRunId` / `analysisId`，必须确认属于当前 tenant。
 - 重复任务返回 `duplicate=true`，不重复创建。
+- RepairTask server action QA Gate 已记录人工 QA 前置条件、用例清单和 UI 接入前置条件。
+- QA Gate 不新增 public API route，不新增前端真实按钮，不新增新的写库路径。
 - 本轮不创建真实按钮，不做批量创建，不做自动修复。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
