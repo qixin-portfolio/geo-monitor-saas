@@ -39,7 +39,8 @@
 12. 在 Evidence Detail Drawer 中展示每条 query 的系统推断依据。
 13. 为未来单条 RepairTask 创建能力执行安全设计审查。
 14. 加固 `validateRepairTaskDraft`，确保未来写库前只接受白名单字段和合法 priority。
-15. 未来与线索做弱归因匹配。
+15. 通过最小 server action 创建单条 tenant scoped `GeoContentTask`。
+16. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -55,6 +56,7 @@
 - RepairTask create safety design
 - RepairTask draft validation result
 - Hardened RepairTask draft validation result
+- Minimal RepairTask server action result
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -87,7 +89,11 @@
 - `validateRepairTaskDraft` 使用显式白名单输出，不保留未知 `evidenceJson` / `briefJson` 字段。
 - 嵌套 raw response、secret、token、cookie、authorization 等字段会被拒绝。
 - 非法 Content Backlog priority 会返回 `valid=false`，不静默 fallback。
-- 本轮不接入真实数据库写入，不创建真实按钮。
+- Minimal RepairTask server action 只创建单条 `GeoContentTask`。
+- server action 不信任 client payload 中的 `tenantId`。
+- 如果传入 `queryId` / `queryRunId` / `analysisId`，必须确认属于当前 tenant。
+- 重复任务返回 `duplicate=true`，不重复创建。
+- 本轮不创建真实按钮，不做批量创建，不做自动修复。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。

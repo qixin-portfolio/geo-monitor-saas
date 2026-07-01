@@ -9,32 +9,32 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | RepairTask Validator Hardening：修复任务 draft 校验器加固 |
-| 执行分支 | `codex/repair-task-validator-hardening` |
+| 当前任务 | Minimal RepairTask Server Action：最小安全修复任务创建能力 |
+| 执行分支 | `codex/minimal-repair-task-action` |
 | 状态 | PR 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #14：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/14](https://github.com/qixin-portfolio/geo-monitor-saas/pull/14) |
-| 上一轮依赖 | PR #13 已合并到远端 main |
-| 实现 commit | `e34de9ff1a3621ea2865317060dbe639cb8de77d` |
+| GitHub 入口 | PR #15：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/15](https://github.com/qixin-portfolio/geo-monitor-saas/pull/15) |
+| 上一轮依赖 | PR #14 已合并到远端 main |
+| 实现 commit | `00bdc27b8b5adf5c10e7227b6f882dd6d690b97d` |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `src/lib/evidence/validate-repair-task-draft.ts`：加固 validator，使用显式白名单输出 `sanitizedDraft`，拒绝非法 Content Backlog priority，并防止未知字段、raw response、secret-like 字段进入 sanitized output。
-- `src/lib/evidence/validate-repair-task-draft.test.ts`：新增未知字段移除、嵌套 raw response、evidenceJson / briefJson 内 secret-like 字段、非法 priority 和白名单输出测试。
-- `docs/architecture/repair-task-create-safety-design.md`：说明 validator hardening 后的白名单字段、priority 拒绝策略和未来 server action 使用边界。
-- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录 RepairTask Validator Hardening 轮次和仍不做按钮 / 写库的边界。
-- `docs/architecture/evidence-chain-data-model.md`：记录 hardened validator 在 Evidence Chain 数据流中的位置。
-- `docs/loops/evidence-led-geo-loop.md`：把 validator hardening 纳入 Loop 过程、输出和验收。
+- `src/app/dashboard/content-backlog/actions/create-evidence-repair-task.ts`：新增最小 server action / server-only function，验证 tenant、payload、query/run/analysis 归属和幂等后，只创建单条 `GeoContentTask`。
+- `src/app/dashboard/content-backlog/actions/create-evidence-repair-task.test.ts`：覆盖未登录、非法 draft、非法 priority、raw response、跨 tenant query/run、合法创建和重复创建。
+- `docs/architecture/repair-task-create-safety-design.md`：记录最小 server action 的当前边界、权限校验和保守幂等策略。
+- `docs/product/evidence-led-geo-monitor-v1.1.md`：记录本轮只新增 server 端能力，不接 UI 按钮。
+- `docs/architecture/evidence-chain-data-model.md`：记录 `GeoContentTask` 字段复用、写入字段和幂等限制。
+- `docs/loops/evidence-led-geo-loop.md`：把最小 server action 纳入 Loop 过程、输出和验收。
 - `AI_TASKS/current.md`：记录本轮任务。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
 ### 验证记录
 
-- `pnpm exec vitest run src/lib/evidence/validate-repair-task-draft.test.ts`：通过，1 个文件 / 12 个测试。
-- `pnpm test:unit`：通过，18 个文件 / 87 个测试。
+- `pnpm exec vitest run src/app/dashboard/content-backlog/actions/create-evidence-repair-task.test.ts`：通过，1 个文件 / 7 个测试。
 - `pnpm typecheck`：通过。
-- `pnpm build`：通过，包含 `/dashboard/evidence-map` 和 `/dashboard/content-backlog` 路由。
+- `pnpm test:unit`：通过，19 个文件 / 94 个测试。
+- `pnpm build`：通过，包含 `/dashboard/content-backlog` 和 `/dashboard/evidence-map` 路由。
 - `git diff --check`：通过。
 
 ### 风险与注意事项
@@ -44,19 +44,20 @@
 - 本轮不运行生产迁移。
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
 - 本轮不自动部署。
-- 本轮不接入数据库写入。
-- 本轮不新增 API route / server action 写库。
-- 本轮不新增真实“加入修复任务池”按钮。
+- 本轮不接前端真实按钮。
+- 本轮不做批量创建。
+- 本轮不做自动修复。
 - 本轮不做 Lead Attribution、PDF、全平台接入。
-- `validateRepairTaskDraft` 只是未来 server action / API 的前置纯校验，不代表已经允许生产写库。
-- 真正写入 `GeoContentTask` 前仍必须做 server 端 tenant 校验、query/run 归属校验、幂等去重和权限校验。
+- 本轮新增 server 端单条写库能力：只写入当前 tenant scoped `GeoContentTask`。
+- `getOrCreateTenant()` 是当前项目既有 tenant resolver；生产路径依赖 Clerk userId，开发环境仍保留项目既有 dev fallback。
+- 当前幂等不新增 schema，用 `tenantId`、`sourceQuery`、`type`、unfinished status 加 `evidenceJson.repairTask` 字段做保守去重。
+- 由于 `GeoContentTask` 没有 `queryId` 或 `idempotencyKey` 字段，当前用 server 端确认后的 `sourceQuery` 作为 query identity 的保守替代。
 
 ### 下一步建议
 
-1. 等待人工审查 PR #14。
-2. 审查 PR 时重点看白名单输出是否彻底移除未知字段，非法 priority 是否不再 fallback。
-3. 下一轮如进入最小 server action / API，需要 Human Gate 确认是否允许真实写入 `GeoContentTask`。
-4. Lead Attribution 仍应另开独立 Issue，等任务池写入链路稳定后再做。
+1. 等待人工审查 PR #15。
+3. 下一轮如接入 Evidence Detail Drawer / Evidence Map 真实按钮，必须再次进入 Human Gate。
+4. UI 按钮只建议做单条创建，不做批量创建或自动修复。
 
 ---
 
@@ -73,3 +74,4 @@
 | 2026-06-30 | Evidence Confidence Label | PR #11 | 已合并 | 证据链置信度标签 |
 | 2026-06-30 | Evidence Detail Drawer | PR #12 | 已合并 | 证据详情抽屉 |
 | 2026-06-30 | RepairTask Create Button Safety Design | PR #13 | 已合并 | 创建单条修复任务能力安全设计与初版 validator |
+| 2026-06-30 | RepairTask Validator Hardening | PR #14 | 已合并 | validator 白名单输出与 priority 拒绝策略 |

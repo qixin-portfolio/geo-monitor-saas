@@ -1,6 +1,7 @@
 # RepairTask Create Button Safety Design
 
-> 本文是安全设计与接口方案。本轮不实现真实按钮，不写数据库，不修改 Prisma schema，不生成 migration。
+> 本文是安全设计与接口方案。当前已进入最小 server action 基础能力，
+> 但仍不实现真实前端按钮，不做批量创建，不修改 Prisma schema，不生成 migration。
 
 ## 1. 当前状态
 
@@ -9,7 +10,8 @@
 - `RepairTaskDraft` 由 `EvidenceMapItem` 纯函数派生。
 - `ContentBacklogTaskDraft` 由 `RepairTaskDraft` 纯函数映射。
 - 当前只在页面展示“可进入修复任务池”的只读语义。
-- 尚未把 Evidence Map 的单条 RepairTask 写入数据库。
+- 已新增 server-only 单条创建能力：`createEvidenceRepairTask`。
+- 该能力只在 server 端创建一条 `GeoContentTask`，尚未接入 UI 按钮。
 - 尚未创建真实“加入修复任务池”按钮。
 
 ## 2. 未来创建任务的数据流
@@ -47,12 +49,13 @@ EvidenceMapItem
 - 如果 `queryId`、`queryRunId` 或 `analysisId` 不属于当前 tenant，返回 404 或 403。
 - 不信任 client payload 中的 `tenantId`、`userId`、`createdByUserId`。
 
-推荐边界：
+当前实现边界：
 
-- 路由：`POST /api/evidence-map/repair-tasks`
-- 输入：`queryId`、可选 `queryRunId`、`ContentBacklogTaskDraft`
-- 输出：`created | existing` 和任务摘要
+- server action / server-only function：`src/app/dashboard/content-backlog/actions/create-evidence-repair-task.ts`
+- 输入：`draft`、可选 `queryId`、`queryRunId`、`analysisId`
+- 输出：`success`、`taskId`、`duplicate`、`errors`
 - 所有 database create 必须发生在 server 端 tenant scoped 逻辑内。
+- 不新增前端按钮，不新增 API route。
 
 ## 4. 字段校验要求
 
@@ -69,13 +72,13 @@ EvidenceMapItem
 - 禁止 raw AI response 入库。
 - 禁止 secret、token、email、phone、cookie、private key、database URL、webhook secret 等敏感字段入库。
 
-本轮新增的 `validateRepairTaskDraft` 是纯函数前置校验：
+`validateRepairTaskDraft` 是写库前的纯函数前置校验：
 
 - 不联网。
 - 不读写数据库。
 - 不依赖浏览器环境。
 - 输出 `valid`、`errors`、`sanitizedDraft`。
-- 只作为未来 server action / API 的安全基建，不代表本轮已接入写库。
+- server action 只使用 `sanitizedDraft`，不使用原始 client payload 写库。
 
 Validator Hardening 后的约束：
 
@@ -86,7 +89,31 @@ Validator Hardening 后的约束：
 - 未知字段不会通过 spread 进入 `sanitizedDraft`。
 - 嵌套 raw response、secret、token、cookie、authorization 等字段会被拒绝。
 - 顶层 Content Backlog priority 只接受 RepairTask 映射产生的 `90`、`70`、`45`；非法 priority 直接返回 `valid=false`，不再静默 fallback。
-- `sanitizedDraft` 可作为未来 server action 的输入基线，但真正写入前仍必须执行 server 端 tenant 校验、幂等去重和权限校验。
+- `sanitizedDraft` 是 server action 的输入基线；真正写入前仍必须执行 server 端 tenant 校验、幂等去重和权限校验。
+
+## 4.1 Minimal RepairTask Server Action
+
+本轮新增 `createEvidenceRepairTask`，作为未来 UI 按钮的 server 端基础能力。
+
+能力范围：
+
+- 只创建单条 `GeoContentTask`。
+- 调用 `validateRepairTaskDraft` 并只使用 `sanitizedDraft`。
+- 通过 `getOrCreateTenant()` 在 server 端解析当前 tenant。
+- 不信任 client payload 中的 `tenantId`、`userId` 或未知字段。
+- 如果传入 `queryId`、`queryRunId`、`analysisId`，必须用当前 tenant 重新查询归属。
+- 如果归属不匹配，直接拒绝，不写库。
+- 写入时使用 `tenant.id`，不使用前端传入 tenant。
+- 写入 `evidenceJson` / `briefJson` 时再次显式白名单重建安全对象。
+
+当前仍不做：
+
+- 不接前端按钮。
+- 不做批量创建。
+- 不做自动修复。
+- 不新增 API route。
+- 不新增 Prisma schema 字段。
+- 不生成 migration。
 
 ## 5. 幂等去重要求
 
@@ -98,11 +125,12 @@ Validator Hardening 后的约束：
 tenantId + queryId + evidenceGap + taskType + suggestedPage
 ```
 
-未来无 schema 变更的临时方案：
+当前无 schema 变更的临时方案：
 
 - 写入前用 `tenantId`、`sourceQuery`、`type`、`status in unfinished` 查询已有任务。
 - 同时检查 `evidenceJson.repairTask.evidenceGap`、`evidenceJson.repairTask.taskType`、`evidenceJson.suggestedPage`。
 - 如果找到未完成同类任务，返回 `existing`，不创建新任务。
+- 由于 `GeoContentTask` 没有 `queryId` 或 `idempotencyKey` 字段，当前用 server 端确认后的 `sourceQuery` 作为 query identity 的保守替代。
 
 未来如需强幂等：
 
@@ -167,7 +195,6 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 本轮不做：
 
-- 数据库写入。
 - Prisma schema 修改。
 - migration。
 - 真实按钮。
@@ -179,20 +206,18 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 - 全平台接入。
 - 自动部署。
 
-## 9. 下一轮最小实现建议
+## 9. 下一轮 UI 接入建议
 
-下一轮如果进入实现，建议只做最小安全 server action / API：
+下一轮如果进入 UI，建议只接入单条按钮，不做批量创建：
 
-1. server 端解析当前 tenant。
-2. server 端按 tenant 重新读取 query / latest run。
-3. server 端从已有 evidence 纯函数重新生成 draft，或对 client draft 重新校验。
-4. 调用 `validateRepairTaskDraft`。
-5. 执行幂等查询。
-6. 只写入一条 `GeoContentTask`。
-7. 返回 created / existing。
+1. Evidence Detail Drawer 中展示“加入修复任务池”按钮。
+2. 点击前显示确认弹窗，说明任务由系统推断生成，不代表平台官方归因。
+3. 前端只提交最小 draft 和 query/run 标识。
+4. server action 继续重新校验 tenant、payload 和幂等。
+5. 成功后提示 created / duplicate，不自动跳转批量流程。
 
 仍需 Human Gate：
 
-- 是否允许写生产数据库。
-- 是否需要新增 idempotency schema。
 - 是否展示真实按钮给所有用户。
+- 是否需要新增 idempotency schema。
+- 是否把按钮限制为特定 plan / tenant。
