@@ -60,7 +60,7 @@ PR #15 已引入 `createEvidenceRepairTask` server action / server-only function
 - 不接前端真实按钮。
 - 不新增新的写库路径。
 - 不做批量创建。
-- 不做自动修复。
+- 不做无人值守执行修复。
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不做全平台接入。

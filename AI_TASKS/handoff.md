@@ -65,7 +65,7 @@
 - 本轮不运行生产迁移。
 - 本轮不修改 `.env`、部署配置、Clerk、Stripe、Billing、proxy。
 - 本轮不自动部署。
-- 本轮不做批量创建、自动修复、Lead Attribution、PDF、全平台接入。
+- 本轮不做批量创建、无人值守执行修复、Lead Attribution、PDF、全平台接入。
 - 所有关键手动 QA 用例通过前，不允许进入真实 UI 按钮接入。
 
 ### 下一步建议
