@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | RepairTask Server Action QA Gate：修复任务创建按钮接入前 QA 闸门 |
 | 执行分支 | `codex/repair-task-qa-gate` |
-| 状态 | 验证通过，等待提交与 PR 创建 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #16：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/16](https://github.com/qixin-portfolio/geo-monitor-saas/pull/16) |
 | 上一轮依赖 | PR #15 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `651528ef8cf0ae866c86196c267cba82afa5bec6` |
 
 ## 本轮交接
 
@@ -62,9 +62,9 @@
 
 ### 下一步建议
 
-1. 完成本轮测试、typecheck、build 和 diff check。
-2. 创建 PR #16 并等待人工审查。
-3. PR #16 合并且手动 QA 通过后，才考虑接入 Evidence Detail Drawer 的单条“加入修复任务池”按钮。
+1. 等待人工审查 PR #16。
+2. PR #16 合并且手动 QA 通过后，才考虑接入 Evidence Detail Drawer 的单条“加入修复任务池”按钮。
+3. 下一轮如接 UI，仍需 Human Gate，不做批量创建或自动修复。
 
 ---
 

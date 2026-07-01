@@ -12,11 +12,11 @@ RepairTask Server Action QA Gate：修复任务创建按钮接入前 QA 闸门
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/16](https://github.com/qixin-portfolio/geo-monitor-saas/pull/16)
 - 分支：`codex/repair-task-qa-gate`
 - 基线：远端 `main`，已包含 PR #15。
-- 实现 commit：待提交。
-- 当前状态：验证通过，等待提交与 PR 创建。
+- 实现 commit：`651528ef8cf0ae866c86196c267cba82afa5bec6`
+- 当前状态：PR 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -83,8 +83,8 @@ PR #15 已进入 main，并新增 `createEvidenceRepairTask` server action / ser
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [ ] PR 描述已更新。
-- [ ] `AI_TASKS/handoff.md` 已更新。
+- [x] PR 描述已更新。
+- [x] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
