@@ -110,7 +110,7 @@ Validator Hardening 后的约束：
 
 - 不接前端按钮。
 - 不做批量创建。
-- 不做自动修复。
+- 不做无人值守执行修复。
 - 不新增 API route。
 - 不新增 Prisma schema 字段。
 - 不生成 migration。
@@ -135,8 +135,28 @@ UI 接入前置条件：
 - server action 不暴露 public API。
 - 仍然只允许单条创建。
 - UI 必须有确认弹窗。
-- UI 必须提示“系统推断，不代表平台官方归因”。
-- UI 文案不得使用“自动修复”等绝对化表述。
+- UI 必须提示“系统推断，不代表官方来源结论”。
+- UI 文案不得使用“无人值守执行修复”等绝对化表述。
+
+## 4.3 RepairTask Server Action Manual QA
+
+QA Gate 合并后，必须在非生产环境执行手动 QA，并把执行状态记录到：
+
+- `docs/qa/repair-task-server-action-manual-qa-record.md`
+
+当前记录状态：
+
+- 本轮已完成 server action 静态审查。
+- 本轮未执行真实非生产 QA。
+- 未执行原因：当前环境没有非生产数据库连接、测试账号、测试 tenant、测试 Query / QueryRun / Analysis。
+- 本轮不修改 env，不使用真实客户数据，不使用真实 raw AI response。
+
+在手动 QA 全部通过前：
+
+- 不允许接前端真实按钮。
+- 不允许批量创建。
+- 不允许新增新的写库路径。
+- 不允许把该能力作为已完成 UI 可用能力对外描述。
 
 ## 5. 幂等去重要求
 
@@ -191,7 +211,7 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 按钮不要写：
 
-- 自动修复
+- 无人值守执行修复
 - 一键修复
 - 生成真实归因
 - 已创建任务
@@ -202,7 +222,7 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 
 确认弹窗建议：
 
-> 该任务由系统根据当前 AI 答案和来源信息推断生成，不代表平台官方归因。创建后会进入 GEO 修复任务池，可由人工继续编辑、确认和执行。
+> 该任务由系统根据当前 AI 答案和来源信息推断生成，不代表官方来源结论。创建后会进入 GEO 修复任务池，可由人工继续编辑、确认和执行。
 
 成功反馈建议：
 
@@ -234,7 +254,7 @@ tenantId + queryId + evidenceGap + taskType + suggestedPage
 下一轮如果进入 UI，建议只接入单条按钮，不做批量创建：
 
 1. Evidence Detail Drawer 中展示“加入修复任务池”按钮。
-2. 点击前显示确认弹窗，说明任务由系统推断生成，不代表平台官方归因。
+2. 点击前显示确认弹窗，说明任务由系统推断生成，不代表官方来源结论。
 3. 前端只提交最小 draft 和 query/run 标识。
 4. server action 继续重新校验 tenant、payload 和幂等。
 5. 成功后提示 created / duplicate，不自动跳转批量流程。
