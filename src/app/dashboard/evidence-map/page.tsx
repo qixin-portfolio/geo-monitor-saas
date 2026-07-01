@@ -62,6 +62,7 @@ type EvidenceMapRow = EvidenceMapItem & {
   id: string
   queryId: string
   runId: string
+  analysisId: string | null
   intentType: string
   platform: string
   surface: string
@@ -308,6 +309,7 @@ async function getEvidenceMapPageData() {
       id: run.id,
       queryId: run.queryId,
       runId: run.id,
+      analysisId: run.analysis?.id ?? null,
       intentType: run.query.intentType,
       platform: run.query.platform,
       surface: run.surface,
@@ -456,7 +458,7 @@ export default async function EvidenceMapPage() {
           <CardHeader>
             <CardTitle>Query Evidence Table</CardTitle>
             <CardDescription>
-              基于每个 Query 最近一次监测结果派生，当前为启发式系统推断，不写入数据库；该判断基于当前可用答案与来源信息，不代表平台官方归因。
+              基于每个 Query 最近一次监测结果派生，当前为启发式系统推断；只有在详情抽屉内人工确认后，才会创建单条修复任务。该判断基于当前可用答案与来源信息，不代表第三方平台确认的来源结论。
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -623,6 +625,9 @@ export default async function EvidenceMapPage() {
                       <EvidenceDetailDrawer
                         detail={
                           {
+                            queryId: row.queryId,
+                            queryRunId: row.runId,
+                            analysisId: row.analysisId,
                             query: row.query,
                             intentLabel: intentLabels[row.intentType] ?? row.intentType,
                             platform: row.platform,
@@ -640,6 +645,7 @@ export default async function EvidenceMapPage() {
                             suggestedPage: row.suggestedPage,
                             suggestedAction: row.suggestedAction,
                             repairTask: row.repairTask,
+                            contentTaskDraft: row.contentTaskDraft,
                             comparison: row.comparison,
                             previousRunTime: row.previousRunCreatedAt
                               ? formatDate(row.previousRunCreatedAt)

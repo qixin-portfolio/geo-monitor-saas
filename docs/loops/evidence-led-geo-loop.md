@@ -43,7 +43,8 @@
 16. 为最小 server action 建立 UI 接入前 QA Gate，人工验证 tenant、归属校验、幂等和安全字段。
 17. 记录 server action 手动 QA 状态；没有非生产环境和测试数据时必须标记未执行，不得伪造通过。
 18. 在本地非生产环境执行 server action 级 Manual QA，验证 15 条接 UI 前安全用例。
-19. 未来与线索做弱归因匹配。
+19. 在 Evidence Detail Drawer 中接入单条“加入修复任务池”按钮，用户确认后复用已 QA 的 server action。
+20. 未来与线索做弱归因匹配。
 
 ## 4. Outputs / 输出
 
@@ -63,6 +64,7 @@
 - RepairTask server action QA Gate
 - RepairTask server action manual QA record
 - RepairTask server action manual QA execution result
+- Evidence Detail Drawer single RepairTask create button
 - Weekly Boss Brief，未来
 - Exportable GEO Evidence Report，未来
 - Lead Attribution Ledger，未来
@@ -89,7 +91,7 @@
 - Evidence Confidence Label 能区分高置信命中、中置信推断、低置信或数据不足。
 - 置信度标签不写入数据库，不作为事实归因。
 - Evidence Detail Drawer 能展示 Query 基本信息、品牌/竞品判断、来源判断、Evidence Gap、RepairTask Draft、Run Comparison 和 Confidence Label。
-- Evidence Detail Drawer 不写入数据库，不创建真实 RepairTask，不展示完整 raw API response。
+- Evidence Detail Drawer 不展示完整 raw API response；只有用户确认单条按钮后才调用已 QA 的 server action 创建任务。
 - RepairTask create safety design 明确权限校验、字段校验、幂等去重、审计字段和 UI 安全文案。
 - `validateRepairTaskDraft` 单元测试通过。
 - `validateRepairTaskDraft` 使用显式白名单输出，不保留未知 `evidenceJson` / `briefJson` 字段。
@@ -100,14 +102,18 @@
 - 如果传入 `queryId` / `queryRunId` / `analysisId`，必须确认属于当前 tenant。
 - 重复任务返回 `duplicate=true`，不重复创建。
 - RepairTask server action QA Gate 已记录人工 QA 前置条件、用例清单和 UI 接入前置条件。
-- QA Gate 不新增 public API route，不新增前端真实按钮，不新增新的写库路径。
+- QA Gate 当轮不新增 public API route、不新增前端按钮、不新增新的写库路径。
 - RepairTask server action manual QA record 已记录执行状态；未实际执行时必须说明原因和下一步所需测试环境。
 - RepairTask server action manual QA execution 已在本地非生产 `localhost` 测试库完成 15 条用例。
 - Manual QA 覆盖未登录、无 tenant、非法 priority、非法 taskType、raw response、secret-like 字段、跨 tenant query/run/analysis、合法创建、duplicate、tenant 可见性和安全字段检查。
 - Manual QA 结果为 15 pass / 0 fail / 0 blocked。
-- 所有关键手动 QA 用例通过前，不允许进入真实 UI 按钮接入。
-- 即使 server action 级 QA 已通过，真实 UI 按钮接入仍需 Human Gate 和按钮级浏览器 QA。
-- 本轮不创建真实按钮，不做批量创建，不做无人值守执行修复。
+- 所有关键手动 QA 用例通过前，不允许进入 UI 按钮接入；PR #18 已记录 15 pass / 0 fail / 0 blocked。
+- 即使 server action 级 QA 已通过，UI 按钮接入后仍需按钮级浏览器 QA。
+- Evidence Detail Drawer 已接入单条“加入修复任务池”按钮。
+- 按钮必须由用户主动点击并确认后调用 `createEvidenceRepairTask`。
+- 按钮只传最小 draft、`queryId`、`queryRunId`、`analysisId`，不传 `tenantId`、raw answer、完整 AI response、token、cookie 或 secret。
+- 按钮提供 success、duplicate、validation、permission 和 unknown error 安全提示，不展示原始 stack 或数据库错误。
+- 本轮不做批量创建，不做无人确认执行修复。
 - Evidence Map 能展示“答案变化趋势”。
 - 没有历史 run 时展示数据不足状态，不崩溃。
 - 不修改 `.env`。

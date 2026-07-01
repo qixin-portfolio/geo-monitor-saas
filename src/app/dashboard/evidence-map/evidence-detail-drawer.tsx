@@ -1,10 +1,15 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { X } from "lucide-react"
+import { ClipboardList, Loader2, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  createEvidenceRepairTask,
+  type CreateEvidenceRepairTaskInput,
+  type CreateEvidenceRepairTaskResult,
+} from "@/app/dashboard/content-backlog/actions/create-evidence-repair-task"
 import type { AnswerSourceDraft } from "@/lib/evidence/extract-answer-sources"
 import type { EvidenceConfidenceLabel } from "@/lib/evidence/classify-evidence-confidence"
 import type {
@@ -18,8 +23,12 @@ import type {
   EvidenceSourceType,
 } from "@/lib/evidence/extract-evidence-map"
 import type { RepairTaskDraft } from "@/lib/evidence/map-evidence-gap-to-repair-task"
+import type { ContentBacklogTaskDraft } from "@/lib/evidence/map-repair-task-to-content-task"
 
 export type EvidenceDetailDrawerData = {
+  queryId: string
+  queryRunId: string
+  analysisId: string | null
   query: string
   intentLabel: string
   platform: string
@@ -37,6 +46,7 @@ export type EvidenceDetailDrawerData = {
   suggestedPage: string
   suggestedAction: string
   repairTask: RepairTaskDraft
+  contentTaskDraft: ContentBacklogTaskDraft
   comparison: EvidenceRunComparison
   previousRunTime: string | null
   confidenceLabel: EvidenceConfidenceLabel
@@ -98,6 +108,23 @@ const repairTaskTypeLabels: Record<RepairTaskDraft["taskType"], string> = {
   competitor_counter: "竞品反制",
 }
 
+type CreateTaskStatus =
+  | "idle"
+  | "loading"
+  | "success"
+  | "duplicate"
+  | "validation_error"
+  | "permission_error"
+  | "unknown_error"
+
+const createTaskMessages: Record<Exclude<CreateTaskStatus, "idle" | "loading">, string> = {
+  success: "已加入修复任务池。",
+  duplicate: "该修复任务已存在，未重复创建。",
+  validation_error: "当前任务信息不足，暂时无法加入修复任务池。",
+  permission_error: "当前账号无权创建该任务。",
+  unknown_error: "暂时无法创建任务，请稍后重试。",
+}
+
 function priorityClass(priority: EvidencePriority) {
   if (priority === "P0") return "border-red-200 bg-red-50 text-red-700"
   if (priority === "P1") return "border-amber-200 bg-amber-50 text-amber-700"
@@ -108,6 +135,86 @@ function confidenceClass(level: EvidenceConfidenceLabel["confidenceLevel"]) {
   if (level === "high") return "border-green-200 bg-green-50 text-green-700"
   if (level === "medium") return "border-amber-200 bg-amber-50 text-amber-700"
   return "border-slate-200 bg-slate-50 text-slate-700"
+}
+
+function createStatusClass(status: CreateTaskStatus) {
+  if (status === "success") return "text-green-700"
+  if (status === "duplicate") return "text-amber-700"
+  if (status === "validation_error" || status === "permission_error" || status === "unknown_error") {
+    return "text-destructive"
+  }
+  return "text-muted-foreground"
+}
+
+function getCreateStatus(result: CreateEvidenceRepairTaskResult): CreateTaskStatus {
+  if (result.success && result.duplicate) return "duplicate"
+  if (result.success) return "success"
+
+  const errorText = result.errors.join(" ")
+  if (/未登录|租户|无权|不属于当前|不存在|query|queryRun|analysis/i.test(errorText)) {
+    return "permission_error"
+  }
+  if (/draft|白名单|invalid priority|priority|taskType|evidenceGap|raw response|secret/i.test(errorText)) {
+    return "validation_error"
+  }
+  return "unknown_error"
+}
+
+function buildCreateRepairTaskInput(
+  detail: EvidenceDetailDrawerData
+): CreateEvidenceRepairTaskInput {
+  const task = detail.repairTask
+  const contentTaskDraft = detail.contentTaskDraft
+  const nextSteps = task.nextSteps
+
+  return {
+    queryId: detail.queryId,
+    queryRunId: detail.queryRunId,
+    analysisId: detail.analysisId,
+    draft: {
+      title: contentTaskDraft.title,
+      type: contentTaskDraft.type,
+      priority: contentTaskDraft.priority,
+      sourceQuery: contentTaskDraft.sourceQuery,
+      sourceReason: contentTaskDraft.sourceReason,
+      targetKeyword: contentTaskDraft.targetKeyword,
+      targetAudience: contentTaskDraft.targetAudience,
+      recommendedAngle: contentTaskDraft.recommendedAngle,
+      evidenceJson: {
+        source: "evidence_map",
+        trigger: task.evidenceGap,
+        relatedQuery: task.relatedQuery,
+        suggestedPage: task.suggestedPage,
+        nextSteps,
+        repairTask: {
+          taskType: task.taskType,
+          priority: task.priority,
+          evidenceGap: task.evidenceGap,
+          suggestedPage: task.suggestedPage,
+          expectedImpact: task.expectedImpact,
+          effortLevel: task.effortLevel,
+          nextSteps,
+        },
+      },
+      briefJson: {
+        audience: contentTaskDraft.targetAudience,
+        searchIntent: task.relatedQuery,
+        angle: task.title,
+        differentiationTargets: [task.suggestedPage, task.evidenceGap, task.taskType],
+        forbiddenClaims: [
+          "不要伪造案例、评价、资质或第三方背书。",
+          "不要承诺页面修改后 AI 答案会立即改变。",
+        ],
+        evidenceNeeded: [task.description, task.suggestedPage, task.expectedImpact],
+        outline: nextSteps,
+        internalLinks: [task.suggestedPage],
+        llmsNotes: [
+          "由 Evidence Map 的 RepairTask draft 映射而来。",
+          "用户确认后加入单条修复任务池。",
+        ],
+      },
+    },
+  }
 }
 
 function Section({
@@ -142,6 +249,40 @@ function Field({
 
 export function EvidenceDetailDrawer({ detail }: EvidenceDetailDrawerProps) {
   const [open, setOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [createStatus, setCreateStatus] = useState<CreateTaskStatus>("idle")
+  const hasRepairTaskDraft = Boolean(detail.repairTask.title && detail.contentTaskDraft.title)
+  const isCreating = createStatus === "loading"
+  const createdOrDuplicate = createStatus === "success" || createStatus === "duplicate"
+  const createMessage =
+    createStatus === "idle" || createStatus === "loading" ? "" : createTaskMessages[createStatus]
+  const createButtonLabel =
+    createStatus === "success"
+      ? "已加入"
+      : createStatus === "duplicate"
+        ? "已存在"
+        : isCreating
+          ? "加入中..."
+          : "加入修复任务池"
+
+  async function handleConfirmCreate() {
+    if (!hasRepairTaskDraft) {
+      setCreateStatus("validation_error")
+      setConfirmOpen(false)
+      return
+    }
+
+    setCreateStatus("loading")
+
+    try {
+      const result = await createEvidenceRepairTask(buildCreateRepairTaskInput(detail))
+      setCreateStatus(getCreateStatus(result))
+    } catch {
+      setCreateStatus("unknown_error")
+    } finally {
+      setConfirmOpen(false)
+    }
+  }
 
   return (
     <>
@@ -163,7 +304,7 @@ export function EvidenceDetailDrawer({ detail }: EvidenceDetailDrawerProps) {
                 <Badge variant="outline">系统推断</Badge>
                 <h2 className="text-xl font-semibold">证据详情</h2>
                 <p className="text-sm text-muted-foreground">
-                  该判断基于当前可用答案与来源信息，不代表平台官方归因。
+                  该判断基于当前可用答案与来源信息，不代表第三方平台确认的来源结论。
                 </p>
               </div>
               <Button
@@ -294,8 +435,39 @@ export function EvidenceDetailDrawer({ detail }: EvidenceDetailDrawerProps) {
                   </ul>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  当前仅为修复任务草稿，不会写入数据库，也不会创建真实任务。
+                  该草稿由系统推断生成。用户确认后只会加入单条修复任务池，并可在 GEO 修复任务中继续编辑和确认。
                 </p>
+                <div className="flex flex-col gap-2 rounded-md border border-dashed px-3 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isCreating || createdOrDuplicate || !hasRepairTaskDraft}
+                      onClick={() => setConfirmOpen(true)}
+                    >
+                      {isCreating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ClipboardList className="h-4 w-4" />
+                      )}
+                      {createButtonLabel}
+                    </Button>
+                    {!hasRepairTaskDraft ? (
+                      <span className="text-xs text-muted-foreground">
+                        当前缺少可创建的修复任务
+                      </span>
+                    ) : null}
+                  </div>
+                  {createMessage ? (
+                    <p className={`text-sm ${createStatusClass(createStatus)}`} aria-live="polite">
+                      {createMessage}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      确认后将复用已通过 Manual QA 的 server action，并由 server 端重新校验权限、tenant 和任务归属。
+                    </p>
+                  )}
+                </div>
               </Section>
 
               <Section title="Run Before/After Comparison">
@@ -371,11 +543,45 @@ export function EvidenceDetailDrawer({ detail }: EvidenceDetailDrawerProps) {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  系统推断，不代表平台官方归因。
+                  系统推断，不代表第三方平台确认的来源结论。
                 </p>
               </Section>
             </div>
           </aside>
+          {confirmOpen ? (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+              <div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="repair-task-confirm-title"
+                aria-describedby="repair-task-confirm-description"
+                className="w-full max-w-md rounded-md border bg-background p-5 shadow-xl"
+              >
+                <div className="space-y-2">
+                  <h3 id="repair-task-confirm-title" className="text-base font-semibold">
+                    加入修复任务池
+                  </h3>
+                  <p id="repair-task-confirm-description" className="text-sm text-muted-foreground">
+                    该任务由系统根据当前 AI 答案、来源信息和证据缺口推断生成，并非第三方平台确认的来源结论。加入后你可以在 GEO 修复任务中继续编辑和确认。
+                  </p>
+                </div>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isCreating}
+                    onClick={() => setConfirmOpen(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button type="button" disabled={isCreating} onClick={handleConfirmCreate}>
+                    {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    确认加入
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>
