@@ -11,10 +11,10 @@
 |------|------|
 | 当前任务 | RepairTask Server Action Manual QA：修复任务创建按钮接入前手动 QA 记录 |
 | 执行分支 | `codex/repair-task-manual-qa` |
-| 状态 | 验证通过，等待提交与 PR 创建 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #17：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/17](https://github.com/qixin-portfolio/geo-monitor-saas/pull/17) |
 | 上一轮依赖 | PR #16 已合并到远端 main |
-| 实现 commit | 待提交 |
+| 实现 commit | `ca41b10e628ec39283f3d8636e328416882401b3` |
 
 ## 本轮交接
 
@@ -70,10 +70,9 @@
 
 ### 下一步建议
 
-1. 完成本轮测试、typecheck、build 和 diff check。
-2. 创建 PR 并等待人工审查。
-3. PR 合并后，由人工在非生产环境执行 Manual QA。
-4. Manual QA 全部通过并经 Human Gate 确认后，才考虑接入单条“加入修复任务池”按钮。
+1. 等待人工审查 PR #17。
+2. PR #17 合并后，由人工在非生产环境执行 Manual QA。
+3. Manual QA 全部通过并经 Human Gate 确认后，才考虑接入单条“加入修复任务池”按钮。
 
 ---
 
