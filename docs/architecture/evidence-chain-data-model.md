@@ -444,7 +444,27 @@ QA Gate 覆盖：
 - 当前幂等仍使用 `tenantId`、`sourceQuery`、`type`、unfinished status 和 `evidenceJson.repairTask` 做保守去重。
 - 强幂等或审计字段需要单独 schema 评估，本轮不处理。
 
-## 17. 何时考虑 Prisma schema
+## 17. RepairTask Server Action Manual QA
+
+本轮仍不新增模型，也不改变 `GeoContentTask` schema。
+
+Manual QA 记录：
+
+- 新增 `docs/qa/repair-task-server-action-manual-qa-record.md`。
+- 记录非生产手动 QA 的环境、测试账号、测试 tenant、测试 Query / QueryRun / Analysis 和用例状态。
+- 当前未执行真实手动 QA，因为没有非生产环境变量、测试账号和测试数据。
+- 当前只完成静态审查和自动化测试。
+
+数据模型影响：
+
+- 不新增 Prisma schema 字段。
+- 不生成 migration。
+- 不新增 public API route。
+- 不新增前端真实按钮。
+- 不新增新的写库路径。
+- 在手动 QA 全部通过前，不应进入 UI 按钮接入。
+
+## 18. 何时考虑 Prisma schema
 
 满足以下条件后再考虑 schema：
 

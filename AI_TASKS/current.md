@@ -7,35 +7,35 @@
 
 ## 任务名称
 
-RepairTask Server Action QA Gate：修复任务创建按钮接入前 QA 闸门
+RepairTask Server Action Manual QA：修复任务创建按钮接入前手动 QA 记录
 
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/16](https://github.com/qixin-portfolio/geo-monitor-saas/pull/16)
-- 分支：`codex/repair-task-qa-gate`
-- 基线：远端 `main`，已包含 PR #15。
-- 实现 commit：`651528ef8cf0ae866c86196c267cba82afa5bec6`
-- 当前状态：PR 已创建，等待人工审查与合并确认。
+- PR：待创建。
+- 分支：`codex/repair-task-manual-qa`
+- 基线：远端 `main`，已包含 PR #16。
+- 实现 commit：待提交。
+- 当前状态：验证通过，等待提交与 PR 创建。
 
 ## 背景
 
-PR #15 已进入 main，并新增 `createEvidenceRepairTask` server action / server-only function。
-该能力已经可以在 server 端创建单条 tenant scoped `GeoContentTask`，但尚未接前端“加入修复任务池”按钮。
+PR #16 已进入 main，并新增 `docs/qa/repair-task-server-action-qa-gate.md`。
+PR #15 已引入 `createEvidenceRepairTask` server action / server-only function。
 
-本轮只做 QA Gate 和 UI 接入前安全准备，不新增按钮、不新增 public API route、不新增新的写库路径。
+本轮只根据 QA Gate 准备并记录手动 QA，不接前端按钮、不新增 public API route、不新增新的写库路径。
 
 ## 本次目标
 
-1. 审查现有 server action、validator、tenant 校验、query / run / analysis 归属校验和幂等去重策略。
-2. 新增 `docs/qa/repair-task-server-action-qa-gate.md`。
-3. 明确人工 QA 前置条件、QA 用例清单和 UI 接入前置条件。
-4. 更新产品、架构、数据模型、Loop 和 handoff 文档。
-5. 保持本轮不改 UI、不改 schema、不生成 migration、不新增写库路径。
+1. 阅读 QA Gate 文档。
+2. 审查 `createEvidenceRepairTask` 当前实现。
+3. 新增 `docs/qa/repair-task-server-action-manual-qa-record.md`。
+4. 如果无法执行非生产 QA，明确记录未执行、原因、所需环境和下一步。
+5. 更新产品、架构、数据模型、Loop 和 handoff 文档。
 
 ## 修改范围
 
-- `docs/qa/repair-task-server-action-qa-gate.md`
+- `docs/qa/repair-task-server-action-manual-qa-record.md`
 - `docs/architecture/repair-task-create-safety-design.md`
 - `docs/product/evidence-led-geo-monitor-v1.1.md`
 - `docs/architecture/evidence-chain-data-model.md`
@@ -45,6 +45,10 @@ PR #15 已进入 main，并新增 `createEvidenceRepairTask` server action / ser
 
 ## 禁止事项
 
+- 不使用生产环境。
+- 不使用真实客户数据。
+- 不使用真实 raw AI response。
+- 不使用真实手机号、微信号、邮箱、token、cookie。
 - 不提交真实 API Key / Token / 账号密码。
 - 不提交 `.env`、数据库连接串、账号密码。
 - 不自动合并 PR。
@@ -66,30 +70,30 @@ PR #15 已进入 main，并新增 `createEvidenceRepairTask` server action / ser
 
 ## 验收标准
 
-- [x] 已确认 PR #15 server action 文件存在于 main。
+- [x] 已确认 PR #16 文件存在于 main。
+- [x] 已读取 QA Gate 文档。
 - [x] 已审查 `createEvidenceRepairTask` 当前 server-only 边界。
-- [x] 已新增 QA Gate 文档。
-- [x] 已记录人工 QA 前置条件。
-- [x] 已记录未登录、无 tenant、非法字段、跨 tenant、合法创建、重复创建和 tenant 隔离 QA 用例。
-- [x] 已记录 UI 接入前置条件和安全文案。
+- [x] 已新增 Manual QA record。
+- [x] 已记录 QA 环境说明、用例表格、UI 接入前判断和残余风险。
+- [x] 已明确本轮未执行真实非生产 QA。
+- [x] 已记录未执行原因和下一步所需非生产环境。
 - [x] 不新增前端真实按钮。
 - [x] 不新增 public API route。
 - [x] 不新增新的写库路径。
 - [x] 不修改 Prisma schema。
 - [x] 不生成 migration。
 - [x] 不修改 env。
-- [x] `pnpm exec vitest run src/app/dashboard/content-backlog/actions/create-evidence-repair-task.test.ts` 通过，1 个文件 / 7 个测试。
 - [x] `pnpm test:unit` 通过，19 个文件 / 94 个测试。
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [x] PR 描述已更新。
-- [x] `AI_TASKS/handoff.md` 已更新。
+- [ ] PR 描述已更新。
+- [ ] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
 - 判断：需要。
-- 依据：RepairTask 写库能力已经存在，接 UI 前必须有可重复、可验证、可停止、可追责的 QA Gate。
+- 依据：RepairTask 写库能力已经存在，接 UI 前必须有可重复、可验证、可停止、可追责的 QA 记录。
 
 ## 是否需要 Human Gate
 

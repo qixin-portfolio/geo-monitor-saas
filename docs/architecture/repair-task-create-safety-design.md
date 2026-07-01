@@ -138,6 +138,26 @@ UI 接入前置条件：
 - UI 必须提示“系统推断，不代表平台官方归因”。
 - UI 文案不得使用“自动修复”等绝对化表述。
 
+## 4.3 RepairTask Server Action Manual QA
+
+QA Gate 合并后，必须在非生产环境执行手动 QA，并把执行状态记录到：
+
+- `docs/qa/repair-task-server-action-manual-qa-record.md`
+
+当前记录状态：
+
+- 本轮已完成 server action 静态审查。
+- 本轮未执行真实非生产 QA。
+- 未执行原因：当前环境没有非生产数据库连接、测试账号、测试 tenant、测试 Query / QueryRun / Analysis。
+- 本轮不修改 env，不使用真实客户数据，不使用真实 raw AI response。
+
+在手动 QA 全部通过前：
+
+- 不允许接前端真实按钮。
+- 不允许批量创建。
+- 不允许新增新的写库路径。
+- 不允许把该能力作为已完成 UI 可用能力对外描述。
+
 ## 5. 幂等去重要求
 
 同一 tenant 在短时间内不应重复创建多条相同任务。
