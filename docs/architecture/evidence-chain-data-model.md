@@ -452,8 +452,10 @@ Manual QA 记录：
 
 - 新增 `docs/qa/repair-task-server-action-manual-qa-record.md`。
 - 记录非生产手动 QA 的环境、测试账号、测试 tenant、测试 Query / QueryRun / Analysis 和用例状态。
-- 当前未执行真实手动 QA，因为没有非生产环境变量、测试账号和测试数据。
-- 当前只完成静态审查和自动化测试。
+- 已在本地非生产 `localhost:5432` 测试库执行 server action 级 Manual QA。
+- 使用 fake Tenant A / Tenant B、fake Query / RunBatch / QueryRun / QueryRunAnalysis。
+- 使用仓库外 payload 和 runner，不把测试 payload、runner 或 `.env.local` 提交到仓库。
+- 15 条 QA 用例通过，0 失败，0 blocked。
 
 数据模型影响：
 
@@ -462,7 +464,8 @@ Manual QA 记录：
 - 不新增 public API route。
 - 不新增前端真实按钮。
 - 不新增新的写库路径。
-- 在手动 QA 全部通过前，不应进入 UI 按钮接入。
+- 本轮只通过现有 `GeoContentTask` 字段验证单条创建、duplicate 和 tenant 隔离。
+- 下一轮 UI 按钮接入前仍需 Human Gate 和按钮级浏览器 QA。
 
 ## 18. 何时考虑 Prisma schema
 

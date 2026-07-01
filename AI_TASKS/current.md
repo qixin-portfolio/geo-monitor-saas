@@ -7,31 +7,38 @@
 
 ## 任务名称
 
-RepairTask Server Action Manual QA：修复任务创建按钮接入前手动 QA 记录
+RepairTask Server Action Manual QA Execution：接 UI 按钮前的本地非生产手动 QA 执行记录
 
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/17](https://github.com/qixin-portfolio/geo-monitor-saas/pull/17)
-- 分支：`codex/repair-task-manual-qa`
-- 基线：远端 `main`，已包含 PR #16。
-- 实现 commit：`ca41b10e628ec39283f3d8636e328416882401b3`
-- 当前状态：PR 已创建，等待人工审查与合并确认。
+- PR：待创建
+- 分支：`codex/repair-task-manual-qa-execution`
+- 基线：远端 `main`，已包含 PR #17。
+- 实现 commit：待提交
+- 当前状态：本地 Manual QA 已执行，等待提交 PR。
 
 ## 背景
 
-PR #16 已进入 main，并新增 `docs/qa/repair-task-server-action-qa-gate.md`。
-PR #15 已引入 `createEvidenceRepairTask` server action / server-only function。
+PR #17 已进入 main，并新增 Manual QA 记录文档。
+当前本地环境已准备好：
 
-本轮只根据 QA Gate 准备并记录手动 QA，不接前端按钮、不新增 public API route、不新增新的写库路径。
+- `DATABASE_URL` host 为 `localhost`。
+- 写入库为本地测试库 `geo_monitor`。
+- Clerk 测试用户已绑定到 fake Tenant A / Tenant B。
+- fake Query / RunBatch / QueryRun / QueryRunAnalysis 已由本地 seed 准备。
+- QA payload 位于仓库外 `/private/tmp/repair-task-manual-qa-payloads.local.json`。
+
+本轮执行 `createEvidenceRepairTask` 的 15 条 Manual QA 用例，并把结果写回仓库文档。
 
 ## 本次目标
 
-1. 阅读 QA Gate 文档。
-2. 审查 `createEvidenceRepairTask` 当前实现。
-3. 新增 `docs/qa/repair-task-server-action-manual-qa-record.md`。
-4. 如果无法执行非生产 QA，明确记录未执行、原因、所需环境和下一步。
+1. 执行前确认 `.env.local` 被忽略、DB host 为 `localhost`、payload 和 server action 存在。
+2. 使用仓库外 runner 调用真实 `createEvidenceRepairTask` server action。
+3. 覆盖 15 条 QA Gate 用例。
+4. 更新 `docs/qa/repair-task-server-action-manual-qa-record.md`。
 5. 更新产品、架构、数据模型、Loop 和 handoff 文档。
+6. 创建 PR，供 ChatGPT / 用户审查。
 
 ## 修改范围
 
@@ -49,8 +56,11 @@ PR #15 已引入 `createEvidenceRepairTask` server action / server-only function
 - 不使用真实客户数据。
 - 不使用真实 raw AI response。
 - 不使用真实手机号、微信号、邮箱、token、cookie。
-- 不提交真实 API Key / Token / 账号密码。
-- 不提交 `.env`、数据库连接串、账号密码。
+- 不打印完整 `DATABASE_URL`。
+- 不打印 Clerk secret、token、cookie 或完整 Clerk user id。
+- 不提交 `.env.local`、数据库连接串、账号密码。
+- 不提交本地 seed 脚本。
+- 不提交仓库外 payload / runner。
 - 不自动合并 PR。
 - 不擅自修改生产部署、数据库、认证、支付配置。
 - 不修改 Prisma schema。
@@ -70,13 +80,18 @@ PR #15 已引入 `createEvidenceRepairTask` server action / server-only function
 
 ## 验收标准
 
-- [x] 已确认 PR #16 文件存在于 main。
-- [x] 已读取 QA Gate 文档。
-- [x] 已审查 `createEvidenceRepairTask` 当前 server-only 边界。
-- [x] 已新增 Manual QA record。
-- [x] 已记录 QA 环境说明、用例表格、UI 接入前判断和残余风险。
-- [x] 已明确本轮未执行真实非生产 QA。
-- [x] 已记录未执行原因和下一步所需非生产环境。
+- [x] 已确认 `.env.local` 被 git ignore。
+- [x] 已确认 `DATABASE_URL` host 为 `localhost`。
+- [x] 已确认 payload 文件存在于仓库外。
+- [x] 已确认 server action 文件存在。
+- [x] 已执行 15 条 Manual QA 用例。
+- [x] 15 条用例通过，0 失败，0 blocked。
+- [x] 合法 draft 创建单条 fake `GeoContentTask`。
+- [x] 重复创建返回 `duplicate=true`，不重复写库。
+- [x] 跨 tenant query / run / analysis 均被拒绝。
+- [x] raw response / secret-like payload 均被拒绝或未入库。
+- [x] 创建后的任务只在当前 tenant 范围内可见。
+- [x] 写入字段未发现 raw response、prompt、token、secret、cookie 或 DB URL 模式。
 - [x] 不新增前端真实按钮。
 - [x] 不新增 public API route。
 - [x] 不新增新的写库路径。
@@ -87,8 +102,8 @@ PR #15 已引入 `createEvidenceRepairTask` server action / server-only function
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [x] PR 描述已更新。
-- [x] `AI_TASKS/handoff.md` 已更新。
+- [ ] PR 描述已更新。
+- [ ] `AI_TASKS/handoff.md` 已更新。
 
 ## 是否需要 Loop
 
@@ -98,7 +113,7 @@ PR #15 已引入 `createEvidenceRepairTask` server action / server-only function
 ## 是否需要 Human Gate
 
 - 判断：需要。
-- 原因：下一轮如果把“加入修复任务池”按钮暴露给用户，会触发真实数据库写入，必须由用户确认后再继续。
+- 原因：虽然本地 server action 级 Manual QA 已通过，但下一轮如果把“加入修复任务池”按钮暴露给用户，会触发真实数据库写入，必须由用户确认后再继续。
 
 ## 交付格式
 

@@ -144,19 +144,24 @@ QA Gate 合并后，必须在非生产环境执行手动 QA，并把执行状态
 
 - `docs/qa/repair-task-server-action-manual-qa-record.md`
 
-当前记录状态：
+当前执行状态：
 
-- 本轮已完成 server action 静态审查。
-- 本轮未执行真实非生产 QA。
-- 未执行原因：当前环境没有非生产数据库连接、测试账号、测试 tenant、测试 Query / QueryRun / Analysis。
+- 已在本地非生产 `localhost:5432` 测试库执行 server action 级 Manual QA。
+- 测试数据为 fake Tenant A / Tenant B、fake Query / QueryRun / QueryRunAnalysis 和仓库外 payload。
+- Clerk 测试用户已绑定到 fake tenant，但文档不记录完整 user id。
+- QA runner 位于仓库外，不提交到仓库。
+- 15 条用例通过，0 失败，0 blocked。
+- 覆盖未登录、无 tenant、非法 priority、非法 taskType、raw response、secret-like 字段、跨 tenant query/run/analysis、合法创建、duplicate、tenant 可见性和安全字段检查。
 - 本轮不修改 env，不使用真实客户数据，不使用真实 raw AI response。
 
-在手动 QA 全部通过前：
+Manual QA 通过后仍然保留以下 UI 接入边界：
 
-- 不允许接前端真实按钮。
-- 不允许批量创建。
-- 不允许新增新的写库路径。
-- 不允许把该能力作为已完成 UI 可用能力对外描述。
+- 本轮不接前端真实按钮。
+- 本轮不允许批量创建。
+- 本轮不新增新的写库路径。
+- 本轮不把该能力作为已完成 UI 可用能力对外描述。
+- 下一轮接入按钮前仍需 Human Gate。
+- 按钮接入后还需要浏览器端到端 QA，覆盖确认弹窗、重复提示、失败提示和 tenant 切换体验。
 
 ## 5. 幂等去重要求
 
