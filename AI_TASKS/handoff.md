@@ -24,6 +24,8 @@
 
 本轮改为 route 内 `await runTenantBatch`，并在 runner 抛错时把本次 batch 标为 `FAILED` 后返回安全错误。
 
+PR 审查后补丁：处理 manual route overlap race。只要 route 创建了本次 batch，即使 runner 返回 `skipped-overlap` 或抛错，本次 batch 也会进入 `FAILED` 终态，并补齐 `failureCount`。
+
 ## 本轮目标
 
 - `POST /api/monitoring/run` 不再 fire-and-forget。
@@ -32,6 +34,7 @@
 - `RunNowButton` 识别 awaited route 直接返回的终态，失败时显示失败状态。
 - OpenAI provider 使用已有 `MONITORING_TIMEOUT_MS` / `MONITORING_MAX_TOKENS` 配置。
 - 测试覆盖 route await、runner failure fallback、missing key count 断言、OpenAI 参数传递。
+- 测试覆盖 overlap skipped 不留下 `PENDING`、runner throw 不留下 `PENDING/RUNNING`、final read 失败不覆盖成功终态。
 
 ## 安全边界
 
@@ -52,7 +55,7 @@
 ## 当前修改文件
 
 - `src/app/api/monitoring/run/route.ts`：manual run 改为 awaited execution，异常时 finalize batch 为 `FAILED`。
-- `src/app/api/monitoring/run/route.test.ts`：覆盖 route 等待 runner 和 runner 抛错 fallback。
+- `src/app/api/monitoring/run/route.test.ts`：覆盖 route 等待 runner、overlap skipped、runner 抛错 fallback、final read failure。
 - `src/components/run-now-button.tsx`：支持 manual route 直接返回终态。
 - `src/lib/monitoring/openai-provider.ts`：接入 timeout / max token 配置。
 - `src/lib/monitoring/openai-provider.test.ts`：覆盖 OpenAI 参数传递。
@@ -64,6 +67,7 @@
 - 原仓库脏工作区未 stash / reset / clean / commit。
 - 新 worktree：`/private/tmp/geo-monitor-monitoring-run-fix`。
 - route 仍使用已有 `/api/monitoring/run`，未新增 public API route。
+- route 兜底更新使用 `{ id, tenantId }`，只处理本次 route 创建的 batch。
 - 未改 schema / migration / env。
 - 未连接 production DB。
 - 未打印或保存 secret。
@@ -71,7 +75,7 @@
 
 ## 验证记录
 
-- `pnpm test:unit`：通过，22 test files / 126 tests。
+- `pnpm test:unit`：通过，22 test files / 128 tests。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。

@@ -24,6 +24,7 @@ Dashboard 出现 `OpenAI / 3 个问题 / 0 成功 / 0 失败 / RUNNING`，诊断
 - 前端 RunNowButton 正确识别 awaited route 返回的终态。
 - OpenAI provider 使用 `MONITORING_TIMEOUT_MS` 和 `MONITORING_MAX_TOKENS`。
 - 补充最小测试，覆盖 route 等待 runner、runner 抛错 batch 不留 RUNNING、OpenAI timeout / max token 参数。
+- 补充 overlap / runner error 终态兜底，避免本次创建的 batch 卡 `PENDING`。
 
 ## 禁止事项
 
@@ -56,10 +57,13 @@ Dashboard 出现 `OpenAI / 3 个问题 / 0 成功 / 0 失败 / RUNNING`，诊断
 - [x] 运行 `pnpm build`。
 - [x] 运行 `git diff --check`。
 - [x] 创建 PR，等待人工审查。
+- [x] 按 PR 审查补丁：`skipped-overlap` 会把本次创建的 batch 标为 `FAILED` 终态。
+- [x] 按 PR 审查补丁：runner error 兜底会补齐 `failureCount`。
+- [x] 按 PR 审查补丁：成功后 final read 失败不会覆盖已完成 batch。
 
 ## 验证结果
 
-- `pnpm test:unit`：通过，22 test files / 126 tests。
+- `pnpm test:unit`：通过，22 test files / 128 tests。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。
