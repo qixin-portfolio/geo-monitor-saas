@@ -9,11 +9,12 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Production Release Gate 设计：RepairTask 单条按钮 production 发布前 Gate |
-| 执行分支 | `codex/production-release-gate` |
-| 状态 | PR #22 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #22：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/22](https://github.com/qixin-portfolio/geo-monitor-saas/pull/22) |
-| 上一轮依赖 | PR #21 已合并到 main，Staging RepairTask Button QA 记录已落库 |
+| 当前任务 | Production Smoke Test Readiness Check：RepairTask 单条按钮 production smoke test 前准备清单 |
+| 执行分支 | `codex/production-smoke-test-readiness` |
+| 状态 | PR #23 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #23：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/23](https://github.com/qixin-portfolio/geo-monitor-saas/pull/23) |
+| 当前 main | `4cd4ec27fc51b8f47f17b22ca65f8c4ea8e9e556` |
+| 上一轮依赖 | PR #21 / PR #22 均已合并到 main |
 | 本轮性质 | docs-only，不修改功能代码 |
 | 是否使用真实客户数据 | 否 |
 
@@ -21,20 +22,21 @@
 
 ### 修改文件
 
-- `docs/qa/repair-task-production-release-gate.md`：新增 production 发布前 Gate，定义前置确认、最小 smoke test、禁止事项和回滚方案。
-- `AI_TASKS/current.md`：记录本轮任务、边界、验收和 Human Gate。
-- `AI_TASKS/handoff.md`：记录本轮交接。
+- `docs/qa/repair-task-production-smoke-test-readiness-check.md`：新增 production smoke test 前 readiness checklist。
+- `AI_TASKS/current.md`：同步当前任务为 Production Smoke Test Readiness Check，并记录 PR #21 / PR #22 已合并。
+- `AI_TASKS/handoff.md`：同步交接状态，移除 PR #22 等待审查 / 合并确认的过时状态。
 
-### Gate 设计摘要
+### Readiness Check 摘要
 
-- PR #21 合并后，不代表可以直接 production rollout。
-- production 发布前必须人工确认 Production DB、Production Clerk、route protection、tenant resolution 和 Vercel env 边界。
-- Production 不得使用 staging Clerk key、staging Supabase、Neon 或测试库。
-- release 前只允许 production 只读 smoke test，不写库。
-- release 后最小 smoke test 只允许内部测试账号和内部测试 tenant。
-- 如执行 smoke test，只允许创建 1 条内部测试 tenant 的任务。
-- Gate 通过前禁止批量创建、无人确认执行、全租户开放、真实客户大范围开放、新增写库路径和公开 API。
-- 回滚优先隐藏入口、关闭按钮或回滚部署；不删除生产数据，不直接改 production DB。
+- 本文档不是 production smoke test。
+- 本文档不是 production rollout。
+- 本文档只用于判断是否具备安排小范围 production smoke test 的条件。
+- 已记录本地 Browser QA 15 pass / 0 fail / 0 blocked。
+- 已记录 Staging Button QA 19 pass / 0 fail / 0 blocked。
+- 已记录 Production Release Gate 已合并。
+- production smoke test 前必须人工确认 Production Vercel、Production domain、Production DB、Production Clerk、route protection、tenant resolution、发布窗口和回滚路径。
+- 如果未来执行 smoke test，最多只允许内部测试账号和内部测试 tenant 创建 1 条 `GeoContentTask`。
+- 禁止全租户开放、批量创建、无人确认执行、新写库路径、公开 API 和 destructive production DB 操作。
 
 ### 安全边界
 
@@ -45,15 +47,17 @@
 - 不新增 public API route。
 - 不新增新的写库路径。
 - 不部署 production。
-- 不跑 production DB。
+- 不运行 production DB。
+- 不点击生产按钮。
+- 不使用真实客户数据。
 - 不改 UI。
 - 不改 server action。
-- 不接批量创建。
-- 不接无人确认执行。
+- 不提交 `.env.local`、seed、payload 或临时脚本。
+- 不做批量创建。
+- 不做无人确认执行。
 - 不做 Lead Attribution。
 - 不做 PDF。
-- 不提交 `.env.local`、seed、payload 或临时脚本。
-- 不使用真实客户数据。
+- 不进入全租户开放。
 
 ### 验证记录
 
@@ -64,15 +68,17 @@
 
 ### 风险与注意事项
 
-- 本轮只是 Gate 文档，不是 production 发布。
-- Gate 合并后仍需人工决定是否执行小范围 production smoke test。
-- production smoke test 如被批准，必须严格限制为内部测试账号和内部测试 tenant。
+- 本轮只是 readiness 文档，不是 production smoke test。
+- 本轮不是 production rollout。
+- readiness 文档合并后，仍需人工决定是否执行 Production Smoke Test。
+- Production Smoke Test 如被批准，必须限制为内部测试账号和内部测试 tenant。
 - 后续不应直接进入批量创建、无人确认执行或全租户开放。
 
 ### 下一步建议
 
-1. 等待 ChatGPT / 用户审查 PR #22，不自动合并。
-2. PR 审查通过后，再由人工决定是否进行小范围 production smoke test。
+1. 等待 ChatGPT / 用户审查 PR #23。
+2. PR 审查通过并合并后，再由人工决定是否进入 Production Smoke Test。
+3. 不要直接 production rollout。
 
 ---
 
@@ -97,3 +103,4 @@
 | 2026-07-01 | Evidence Detail Drawer Single RepairTask Button | PR #19 | 已合并 | 单条按钮、确认弹窗、安全提示，复用已 QA 的 server action |
 | 2026-07-01 | RepairTask Button Browser QA | PR #20 | 已合并 | 本地非生产 Button Browser QA 15 pass / 0 fail / 0 blocked |
 | 2026-07-02 | Staging RepairTask Button QA Record | PR #21 | 已合并 | Staging Button QA 19 pass / 0 fail / 0 blocked |
+| 2026-07-02 | RepairTask Production Release Gate | PR #22 | 已合并 | production 发布前 Gate，非 rollout |
