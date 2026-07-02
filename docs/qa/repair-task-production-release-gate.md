@@ -24,6 +24,9 @@ PR #21 合并后，不代表可以直接 production rollout。
 | Staging 登录环境 | Clerk Staging 真实登录 |
 | Staging 数据库 | Supabase `geo-monitor-staging` |
 | Staging runtime 连接 | Supabase transaction pooler |
+| Staging session pooler 观察 | 首轮使用 Supabase session pooler 时曾出现 `EMAXCONNSESSION` / max clients reached in session mode，未继续按钮 QA |
+| Staging transaction pooler 观察 | Preview 切换为 Supabase transaction pooler 后，dashboard / Evidence Map / Content Backlog 页面可正常加载 |
+| Staging 连接兼容性观察 | transaction pooler 下未观察到 prepared statement、PgBouncer 或 Prisma 连接兼容错误 |
 | Tenant A / B 隔离 | 通过 |
 | GeoContentTask QA 前数量 | Tenant A = 0 / Tenant B = 0 |
 | GeoContentTask QA 后数量 | Tenant A = 1 / Tenant B = 1 |
