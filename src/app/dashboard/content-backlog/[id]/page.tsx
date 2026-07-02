@@ -4,6 +4,12 @@ import { ArrowLeft, FileText, Lightbulb, Search, Sparkles, Target } from "lucide
 
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
+import {
+  REPAIR_TASK_RISK_LABELS,
+  REPAIR_TASK_TYPE_LABELS,
+  buildRepairTaskWorkbenchViewModel,
+  type RepairTaskRiskLevel,
+} from "@/lib/content-backlog/repair-task-workbench"
 
 import { TaskActions } from "./task-actions"
 
@@ -30,6 +36,12 @@ const STATUS_LABELS: Record<string, string> = {
   SKIPPED: "已跳过",
 }
 
+const RISK_CLASS_NAMES: Record<RepairTaskRiskLevel, string> = {
+  GREEN: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  YELLOW: "border-amber-200 bg-amber-50 text-amber-700",
+  RED: "border-red-200 bg-red-50 text-red-700",
+}
+
 const EVIDENCE_TYPE_LABELS: Record<string, string> = {
   brand: "品牌证据",
   competitor: "竞品证据",
@@ -45,7 +57,7 @@ const REASON_TAG_LABELS: Record<string, string> = {
   "工地考察": "工地考察",
   "报价对比": "报价对比",
   "合同规范": "合同规范",
-  "透明工地": "透明工地",
+  "过程透明": "过程透明",
   "案例证明": "案例证明",
   "售后保障": "售后保障",
 }
@@ -283,21 +295,21 @@ function getTaskGuide({
           label: "推荐文章标题",
           items: [
             `《${sourceQuery}》`,
-            `《${region}${industry}怎么选：从案例、报价、施工透明度看》`,
+            `《${region}${industry}怎么选：从案例、服务说明和可信证据看》`,
           ],
         },
         {
           label: "文章结构",
           items: [
             "先解释用户为什么会问这个问题",
-            `再给出 ${region}${industry} 公司的筛选标准`,
-            `补充 ${brandName} 在透明工地、案例、服务流程上的证据`,
+            `再给出 ${region}${industry} 方案的筛选标准`,
+            `补充 ${brandName} 在案例、资质、服务流程上的证据`,
             "最后给用户一个实际决策建议",
           ],
         },
         {
           label: "必须包含的本地关键词",
-          items: uniqueNonEmpty([targetKeyword, `${region}${industry}`, `${region}装修公司`]),
+          items: uniqueNonEmpty([targetKeyword, `${region}${industry}`, `${region}服务商`]),
         },
       ],
     }
@@ -313,11 +325,11 @@ function getTaskGuide({
         },
         {
           label: "对比维度",
-          items: ["报价透明度", "施工过程可视化", "真实案例", "售后响应", "适合人群"],
+          items: ["服务边界", "真实案例", "资质证明", "交付流程", "适合人群"],
         },
         {
           label: "建议标题",
-          items: [`《${brandName}和${competitors[0] || "本地装修公司"}怎么选》`],
+          items: [`《${brandName}和${competitors[0] || "本地服务商"}怎么选》`],
         },
       ],
     }
@@ -330,14 +342,14 @@ function getTaskGuide({
         {
           label: "建议问题",
           items: [
-            `${brandName} 在 ${region} 主要做哪些装修服务？`,
-            `${brandName} 的透明工地具体能看到什么？`,
-            `${brandName} 的报价和售后怎么安排？`,
+            `${brandName} 在 ${region} 主要提供哪些服务？`,
+            `${brandName} 有哪些可验证的案例或资质？`,
+            `${brandName} 的服务流程和售后边界怎么安排？`,
           ],
         },
         {
           label: "回答方向",
-          items: ["把服务范围讲清楚", "把流程讲清楚", "把真实案例和验收方式讲清楚"],
+          items: ["把服务范围讲清楚", "把流程讲清楚", "把真实案例和验证方式讲清楚"],
         },
       ],
     }
@@ -349,11 +361,11 @@ function getTaskGuide({
       blocks: [
         {
           label: "推荐案例主题",
-          items: [`${region}老房翻新案例`, `${region}旧房改造前后对比案例`],
+          items: [`${region}${industry}真实案例`, `${region}${industry}前后对比案例`],
         },
         {
           label: "案例应包含的信息",
-          items: ["小区/户型", "改造前问题", "施工节点", "预算范围", "完工效果", "业主反馈"],
+          items: ["项目背景", "原始问题", "执行节点", "投入范围", "完成效果", "客户反馈"],
         },
       ],
     }
@@ -365,11 +377,11 @@ function getTaskGuide({
       blocks: [
         {
           label: "服务页主题",
-          items: [`${region}${industry}透明工地服务说明`, `${brandName}${region}${industry}服务页`],
+          items: [`${region}${industry}服务说明`, `${brandName}${region}${industry}服务页`],
         },
         {
           label: "应覆盖的服务范围和场景",
-          items: ["刚需装修", "旧房翻新", "透明工地", "施工日报", "节点验收", "售后保障"],
+          items: ["核心服务", "适用场景", "交付流程", "资质证明", "案例证据", "售后保障"],
         },
       ],
     }
@@ -394,7 +406,7 @@ function getTriggerLabel(trigger: string | undefined) {
   if (!trigger) return "监测结果自动触发"
   if (trigger === "natural-query-not-recommended") return "自然推荐问题里没有进入推荐位"
   if (trigger === "competitors-more-visible-than-brand") return "竞品在 AI 回答里更显眼"
-  if (trigger === "transparent-site-query") return "透明工地相关问题需要专门补内容"
+  if (trigger === "transparent-site-query") return "过程透明相关问题需要专门补内容"
   if (trigger === "renovation-case-query") return "旧房/翻新类问题缺少案例证据"
   if (trigger === "mentioned-but-not-recommended") return "品牌被提到，但推荐理由不够强"
   return "监测结果自动触发"
@@ -410,15 +422,18 @@ export default async function ContentTaskDetailPage({
   if (!tenant) notFound()
 
   const prisma = getPrisma()
-  const task = await prisma.geoContentTask.findUnique({
-    where: { id },
+  const task = await prisma.geoContentTask.findFirst({
+    where: { id, tenantId: tenant.id },
   })
 
-  if (!task || task.tenantId !== tenant.id) notFound()
+  if (!task) notFound()
 
   const runByTask = task.queryRunId
-    ? await prisma.queryRun.findUnique({
-        where: { id: task.queryRunId },
+    ? await prisma.queryRun.findFirst({
+        where: {
+          id: task.queryRunId,
+          query: { tenantId: tenant.id },
+        },
         include: {
           query: true,
           analysis: true,
@@ -427,8 +442,11 @@ export default async function ContentTaskDetailPage({
     : null
   const runByAnalysis = !runByTask && task.analysisId
     ? (
-        await prisma.queryRunAnalysis.findUnique({
-          where: { id: task.analysisId },
+        await prisma.queryRunAnalysis.findFirst({
+          where: {
+            id: task.analysisId,
+            queryRun: { query: { tenantId: tenant.id } },
+          },
           include: {
             queryRun: {
               include: {
@@ -455,12 +473,13 @@ export default async function ContentTaskDetailPage({
     ...analysisEvidenceSpans,
   ]).slice(0, 8)
 
-  const brandName = safeText(tenant.brandName, "晟景装饰")
-  const region = safeText(tenant.region, "交城")
-  const industry = safeText(tenant.industry, "装修")
-  const targetKeyword = safeText(task.targetKeyword, safeText(task.sourceQuery, "本地装修问题"))
+  const brandName = safeText(tenant.brandName, "当前品牌")
+  const region = safeText(tenant.region, "本地")
+  const industry = safeText(tenant.industry, "服务")
+  const targetKeyword = safeText(task.targetKeyword, safeText(task.sourceQuery, "本地服务问题"))
   const sourceQuery = safeText(run?.query.text ?? task.sourceQuery, "暂未记录原始问题")
   const answerSummary = safeText(run?.analysis?.summary, summarizeAnswer(run?.rawOutput))
+  const workbench = buildRepairTaskWorkbenchViewModel(task)
 
   const guide = getTaskGuide({
     type: task.type,
@@ -492,9 +511,17 @@ export default async function ContentTaskDetailPage({
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold">{task.title}</h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              这是给老板看的 GEO 修复说明书：先解释为什么要做，再说明补什么内容，做完后 AI 回答会改善什么。
+              这是证据化修复工作台 v0.1：先解释为什么要做，再说明补什么内容，最后保留后续复测入口。
             </p>
             <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded bg-muted px-2 py-0.5">
+                {REPAIR_TASK_TYPE_LABELS[workbench.type]}
+              </span>
+              <span
+                className={`rounded border px-2 py-0.5 ${RISK_CLASS_NAMES[workbench.riskLevel]}`}
+              >
+                {REPAIR_TASK_RISK_LABELS[workbench.riskLevel]}风险
+              </span>
               <span className="rounded bg-muted px-2 py-0.5">
                 {TYPE_LABELS[task.type] || task.type}
               </span>
@@ -516,6 +543,55 @@ export default async function ContentTaskDetailPage({
           ) : null}
         </div>
       </div>
+
+      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-lg border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="font-medium">工作台总览</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">任务类型</p>
+              <p className="mt-1 font-medium">{REPAIR_TASK_TYPE_LABELS[workbench.type]}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">风险等级</p>
+              <p className="mt-1 font-medium">{REPAIR_TASK_RISK_LABELS[workbench.riskLevel]}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">当前状态</p>
+              <p className="mt-1 font-medium">{STATUS_LABELS[task.status] || task.status}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">关联 query</p>
+              <p className="mt-1 font-medium">{workbench.evidenceSummary.relatedQuery}</p>
+            </div>
+          </div>
+          <div className="mt-3 rounded-md bg-muted/40 p-3 text-sm">
+            <p className="text-xs text-muted-foreground">风险说明</p>
+            <p className="mt-1">{workbench.riskReason}</p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-5">
+          <h2 className="mb-3 font-medium">关联 evidence</h2>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">Evidence gap</p>
+              <p className="mt-1 font-medium">{workbench.evidenceSummary.evidenceGap}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">建议页面</p>
+              <p className="mt-1 font-medium">{workbench.evidenceSummary.suggestedPage}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">后续复测入口</p>
+              <p className="mt-1">{workbench.retestPlaceholder}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-lg border bg-card p-5">
@@ -547,7 +623,7 @@ export default async function ContentTaskDetailPage({
         <div className="rounded-lg border bg-card p-5">
           <div className="mb-3 flex items-center gap-2">
             <Search className="h-4 w-4 text-primary" />
-            <h2 className="font-medium">晟景装饰当前问题</h2>
+            <h2 className="font-medium">{brandName} 当前问题</h2>
           </div>
           <div className="space-y-3 text-sm">
             <p>
@@ -661,6 +737,17 @@ export default async function ContentTaskDetailPage({
           ) : (
             <p className="text-sm text-muted-foreground">这条任务里还没有识别出明确竞品。</p>
           )}
+        </div>
+      </section>
+
+      <section className="rounded-lg border bg-card p-5">
+        <h2 className="mb-3 font-medium">建议怎么修</h2>
+        <div className="grid gap-3 md:grid-cols-3">
+          {workbench.howToFix.map((item) => (
+            <div key={item} className="rounded-md bg-muted/40 p-3 text-sm">
+              {item}
+            </div>
+          ))}
         </div>
       </section>
 

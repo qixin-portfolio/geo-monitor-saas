@@ -9,35 +9,45 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | RepairTask 单条按钮链路阶段收口：AI_TASKS 状态同步 |
-| 执行分支 | `codex/sync-ai-tasks-after-pr23` |
-| 状态 | PR #24 已创建，等待人工审查与合并确认；RepairTask 单条按钮链路工程阶段已完成 |
-| GitHub 入口 | PR #24：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/24](https://github.com/qixin-portfolio/geo-monitor-saas/pull/24) |
-| 当前 main | `6fc9cc56b3ac1654670464286cdd37c270e9f989` |
-| 上一轮依赖 | PR #21 / PR #22 / PR #23 均已合并到 main |
-| 本轮性质 | docs-only / AI_TASKS-only，不修改功能代码 |
+| 当前任务 | 证据化修复工作台 v0.1 |
+| 执行分支 | `codex/repair-task-workbench-v0.1` |
+| 状态 | PR #25 已创建，等待人工审查 |
+| GitHub 入口 | PR #25：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/25](https://github.com/qixin-portfolio/geo-monitor-saas/pull/25) |
+| 当前 main | `08580e4298b2bab96d91b13535967aad0ef720c3` |
+| 上一轮依赖 | PR #21 / #22 / #23 / #24 均已合并到 main |
+| 本轮性质 | 低风险展示 + ViewModel 整理；不改 schema；不新增写库路径 |
 | 是否使用真实客户数据 | 否 |
 
 ## 阶段结论
 
-RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记完成。
+RepairTask 单条“加入修复任务池”按钮链路工程阶段已完成。
 
-已完成：
+当前进入阶段 2：“证据化修复工作台”设计与 v0.1 实现。
 
-- server action 已 QA。
-- 单条按钮已接入 Evidence Detail Drawer。
-- 本地 Browser QA：15 pass / 0 fail / 0 blocked。
-- Staging QA：19 pass / 0 fail / 0 blocked。
-- PR #21 已合并：Staging RepairTask Button QA Record。
-- PR #22 已合并：Production Release Gate。
-- PR #23 已合并：Production Smoke Test Readiness Check。
-- Production Release Gate 已建立。
-- Production Smoke Test Readiness Check 已建立。
-- 当前 open PR 只有 #3，且与 RepairTask 单条按钮链路无关。
+本轮只做最小可用展示：
+
+- RepairTask 类型。
+- 风险等级。
+- 关联 query。
+- 关联 evidence / evidence gap。
+- 为什么建议修。
+- 建议怎么修。
+- 当前状态。
+- 后续 Retest / Report 占位。
+
+## 审计结论
+
+- 现有 `GeoContentTask` 字段足够支撑 v0.1，只需派生 ViewModel。
+- 不需要 Prisma schema change。
+- 不需要 migration。
+- 不需要新增 public API route。
+- 不需要新增 server action。
+- 不需要改变 `createEvidenceRepairTask`。
+- tenant isolation 继续使用现有 `getOrCreateTenant()` 和 `tenantId` 过滤。
 
 ## 当前产品能力边界
 
-当前只完成“单条、用户确认、可追踪”的修复任务加入链路。
+当前只完成“单条、用户确认、可追踪”的修复任务加入和展示链路。
 
 仍禁止：
 
@@ -49,33 +59,22 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 - PDF。
 - 新增写库路径。
 - 新增 public API。
-- 绕过确认弹窗。
-- 把系统推断说成第三方平台确认结论。
-
-## 下一阶段方向
-
-下一阶段不是 production rollout，也不是批量自动化。
-
-下一阶段应进入：“证据化修复工作台”设计。
-
-阶段 2 目标：
-
-- RepairTask 风险等级：绿 / 黄 / 红。
-- 修复任务类型：FAQ、案例页、资质页、服务页、Schema、对比页。
-- 每条任务绑定证据依据。
-- 修复前后复测。
-- 生成老板看得懂的 GEO 修复报告。
+- 跳过 Human Gate。
 
 ## 本轮交接
 
 ### 修改文件
 
-- `AI_TASKS/current.md`：同步阶段完成状态和下一阶段方向。
-- `AI_TASKS/handoff.md`：同步交接状态，移除上一轮 PR #23 相关过时交接状态。
+- `docs/product/repair-task-workbench-v0.1.md`：新增阶段 2 v0.1 产品设计与安全边界。
+- `src/lib/content-backlog/repair-task-workbench.ts`：新增任务类型、风险等级、风险原因和证据摘要 ViewModel 纯函数。
+- `src/lib/content-backlog/repair-task-workbench.test.ts`：新增纯函数单元测试。
+- `src/app/dashboard/content-backlog/page.tsx`：列表页升级为证据化修复工作台入口，展示类型和风险等级。
+- `src/app/dashboard/content-backlog/[id]/page.tsx`：详情页新增工作台总览、关联 evidence、建议怎么修和 Retest 占位。
+- `AI_TASKS/current.md`：同步本轮任务状态。
+- `AI_TASKS/handoff.md`：同步本轮交接状态。
 
 ### 安全边界
 
-- 不修改 `src`。
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不修改 env。
@@ -85,36 +84,32 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 - 不运行 production DB。
 - 不点击生产按钮。
 - 不使用真实客户数据。
-- 不改 UI。
-- 不改 server action。
 - 不提交 `.env.local`、seed、payload 或临时脚本。
 - 不做批量创建。
 - 不做无人确认执行。
 - 不做 Lead Attribution。
 - 不做 PDF。
-- 不进入全租户开放。
-- 不启动“证据化修复工作台”功能开发。
 
 ### 验证记录
 
-- `pnpm test:unit`：通过，19 个文件 / 94 个测试。
+- `pnpm test:unit`：通过，20 个文件 / 100 个测试。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。
+- Browser QA：blocked。干净克隆只有 `.env.example`，无本地非生产 `DATABASE_URL`；未复制、保存或打印任何 secret，未连接 production/staging DB。
 
 ### 风险与注意事项
 
-- 本轮只是状态同步，不是 production rollout。
-- 本轮不启动“证据化修复工作台”功能开发。
-- 后续即使进入“证据化修复工作台”设计，也不应直接进入批量创建或无人确认执行。
-- Production Smoke Test 是否执行仍需单独 Human Gate。
+- 风险等级为启发式派生，不是合规结论，也不是第三方平台官方归因。
+- v0.1 的 Retest / Report 仅为占位，不自动复测，不生成报告。
+- 若后续需要保存风险等级、复测结果或审计记录，应单独提出 schema change proposal。
 
 ### 下一步建议
 
-1. 等待 ChatGPT / 用户审查 PR #24。
-2. 合并后，下一阶段可讨论“证据化修复工作台”设计。
-3. 不要直接 production rollout。
-4. 不要进入批量创建或无人确认执行。
+1. 完成验证命令和本地 Browser QA。
+2. 创建 PR，等待人工审查。
+3. 不直接 production rollout。
+4. 不进入批量创建或无人确认执行。
 
 ---
 
@@ -141,3 +136,4 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 | 2026-07-02 | Staging RepairTask Button QA Record | PR #21 | 已合并 | Staging Button QA 19 pass / 0 fail / 0 blocked |
 | 2026-07-02 | RepairTask Production Release Gate | PR #22 | 已合并 | production 发布前 Gate，非 rollout |
 | 2026-07-02 | Production Smoke Test Readiness Check | PR #23 | 已合并 | production smoke test 前人工准备清单，非 rollout |
+| 2026-07-02 | AI_TASKS 状态同步 | PR #24 | 已合并 | RepairTask 单条按钮链路阶段完成，下一阶段为证据化修复工作台设计 |

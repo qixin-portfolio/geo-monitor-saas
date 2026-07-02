@@ -1,6 +1,12 @@
 import Link from "next/link"
 import { getPrisma } from "@/lib/prisma"
 import { getOrCreateTenant } from "@/lib/tenant"
+import {
+  REPAIR_TASK_RISK_LABELS,
+  REPAIR_TASK_TYPE_LABELS,
+  buildRepairTaskWorkbenchViewModel,
+  type RepairTaskRiskLevel,
+} from "@/lib/content-backlog/repair-task-workbench"
 
 export const dynamic = "force-dynamic"
 
@@ -23,6 +29,12 @@ const STATUS_LABELS: Record<string, string> = {
   APPROVED: "已批准",
   EXPORTED: "已导出",
   SKIPPED: "已跳过",
+}
+
+const RISK_CLASS_NAMES: Record<RepairTaskRiskLevel, string> = {
+  GREEN: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  YELLOW: "border-amber-200 bg-amber-50 text-amber-700",
+  RED: "border-red-200 bg-red-50 text-red-700",
 }
 
 function getCompetitorsFromEvidence(value: unknown) {
@@ -64,9 +76,9 @@ export default async function ContentBacklogPage() {
     <div className="flex flex-col gap-6 p-6 md:p-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">GEO 修复任务</h1>
+          <h1 className="text-3xl font-semibold">证据化修复工作台</h1>
           <p className="mt-2 text-muted-foreground">
-            从监测结果自动生成的内容优化行动清单。
+            把已确认加入任务池的 RepairTask 整理成可追踪、可解释、可复测的修复行动。
           </p>
         </div>
       </div>
@@ -85,7 +97,8 @@ export default async function ContentBacklogPage() {
               <tr className="border-b bg-muted/50 text-left text-xs uppercase text-muted-foreground">
                 <th className="px-4 py-3 font-medium">优先级</th>
                 <th className="px-4 py-3 font-medium">任务标题</th>
-                <th className="px-4 py-3 font-medium">建议内容类型</th>
+                <th className="px-4 py-3 font-medium">任务类型</th>
+                <th className="px-4 py-3 font-medium">风险等级</th>
                 <th className="px-4 py-3 font-medium">原因</th>
                 <th className="px-4 py-3 font-medium">竞品</th>
                 <th className="px-4 py-3 font-medium">状态</th>
@@ -96,6 +109,7 @@ export default async function ContentBacklogPage() {
             <tbody>
               {tasks.map((task) => {
                 const competitors = getCompetitorsFromEvidence(task.evidenceJson)
+                const workbench = buildRepairTaskWorkbenchViewModel(task)
 
                 return (
                   <tr
@@ -120,12 +134,22 @@ export default async function ContentBacklogPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-block rounded bg-muted px-2 py-0.5 text-xs">
+                        {REPAIR_TASK_TYPE_LABELS[workbench.type]}
+                      </span>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {TYPE_LABELS[task.type] || task.type}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block rounded border px-2 py-0.5 text-xs ${RISK_CLASS_NAMES[workbench.riskLevel]}`}
+                      >
+                        {REPAIR_TASK_RISK_LABELS[workbench.riskLevel]}
                       </span>
                     </td>
                     <td className="max-w-[280px] px-4 py-3 text-xs text-muted-foreground">
                       <span className="line-clamp-3">
-                        {task.sourceReason || "-"}
+                        {workbench.whyFix}
                       </span>
                     </td>
                     <td className="max-w-[220px] px-4 py-3">
@@ -150,7 +174,7 @@ export default async function ContentBacklogPage() {
                       </span>
                     </td>
                     <td className="max-w-[220px] truncate px-4 py-3 text-muted-foreground">
-                      {task.sourceQuery || "-"}
+                      {workbench.evidenceSummary.relatedQuery}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(task.createdAt).toLocaleDateString("zh-CN")}
