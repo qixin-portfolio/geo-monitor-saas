@@ -89,6 +89,11 @@ export type RepairTaskDetailViewModel = RepairTaskWorkbenchViewModel & {
     level: RepairTaskRiskLevel
     reason: string
     handling: string
+    summary: string
+    executionDecision: string
+    requiredEvidence: string[]
+    prohibitedActions: string[]
+    humanGateNotice: string
   }
   retestPlan: {
     beforeState: string
@@ -114,6 +119,8 @@ export const REPAIR_TASK_RISK_LABELS: Record<RepairTaskRiskLevel, string> = {
   YELLOW: "黄色",
   RED: "红色",
 }
+
+const RISK_LEVELS = ["GREEN", "YELLOW", "RED"] as const
 
 const REPAIR_TASK_TYPE_BY_METADATA: Record<string, RepairTaskWorkbenchType> = {
   faq_addition: "FAQ",
@@ -199,6 +206,19 @@ function getCompetitorNames(value: unknown) {
         .filter(Boolean)
     )
   )
+}
+
+function normalizeRiskLevel(value: unknown): RepairTaskRiskLevel {
+  return RISK_LEVELS.includes(value as RepairTaskRiskLevel)
+    ? (value as RepairTaskRiskLevel)
+    : "YELLOW"
+}
+
+function normalizeWorkbenchType(value: unknown): RepairTaskWorkbenchType {
+  const text = asString(value)
+  return Object.prototype.hasOwnProperty.call(REPAIR_TASK_TYPE_LABELS, text)
+    ? (text as RepairTaskWorkbenchType)
+    : "CONTENT_UPDATE"
 }
 
 function getRepairTaskMetadata(value: unknown): RepairTaskMetadata {
@@ -459,15 +479,131 @@ export function getRepairTaskAcceptanceCriteria(task: RepairTaskWorkbenchInput) 
 export function getRepairTaskRiskHandling(task: RepairTaskWorkbenchInput) {
   const riskLevel = deriveRepairTaskRiskLevel(task)
 
-  if (riskLevel === "RED") {
-    return "禁止直接执行。只能记录风险，拆出人工审查或修正任务，不允许自动发布。"
+  return getRiskExecutionDecision(riskLevel)
+}
+
+export function getRiskExecutionDecision(riskLevel: RepairTaskRiskLevel | string | null | undefined) {
+  const level = normalizeRiskLevel(riskLevel)
+
+  if (level === "RED") {
+    return "禁止直接执行。只能记录风险或改写方向，不得自动发布或包装成事实。"
   }
 
-  if (riskLevel === "YELLOW") {
-    return "需要补证据或人工审核后再进入内容制作，不能直接发布。"
+  if (level === "YELLOW") {
+    return "暂不建议直接执行。需要补证据或人工确认后，再进入内容制作。"
   }
 
-  return "可以进入正常内容制作，但仍需保留人工确认和后续复测。"
+  return "可进入内容制作，但仍需基于真实资料；这不代表自动发布，也不代表系统已经完成审核。"
+}
+
+export function getRequiredEvidenceByTaskType(
+  taskType: RepairTaskWorkbenchType | string | null | undefined,
+  riskLevel?: RepairTaskRiskLevel | string | null
+) {
+  const type = normalizeWorkbenchType(taskType)
+  const level = normalizeRiskLevel(riskLevel ?? "GREEN")
+
+  const baseByType: Record<RepairTaskWorkbenchType, string[]> = {
+    FAQ: ["服务范围", "真实流程", "常见问题答案", "更新时间"],
+    CASE_STUDY: ["真实项目名称或脱敏项目", "施工 / 服务过程", "结果说明", "可核验图片或记录"],
+    QUALIFICATION: ["营业执照", "资质证书", "行业背书", "授权证明"],
+    SERVICE_PAGE: ["服务范围", "服务流程", "适用场景", "案例或资质依据"],
+    SCHEMA: ["页面真实内容", "Organization / LocalBusiness / FAQ / Article 等结构化字段", "与页面正文一致"],
+    COMPARISON: ["对比维度", "事实来源", "不攻击竞品", "不使用“碾压”“吊打”等表达"],
+    SOURCE_BUILDING: ["第三方页面", "媒体来源", "平台资料", "可公开访问的证明来源"],
+    CONTENT_UPDATE: ["关联 query", "页面现有内容", "需要补充的事实依据", "更新时间"],
+  }
+
+  const riskEvidence = level === "YELLOW"
+    ? ["补充人工可核验来源", "确认措辞不夸大"]
+    : level === "RED"
+      ? ["记录风险来源", "准备改写后的安全方向"]
+      : []
+
+  return Array.from(new Set([...baseByType[type], ...riskEvidence]))
+}
+
+export function getRiskProhibitedActions(riskLevel: RepairTaskRiskLevel | string | null | undefined) {
+  const level = normalizeRiskLevel(riskLevel)
+
+  if (level === "RED") {
+    return [
+      "攻击竞品",
+      "伪造客户评价",
+      "虚构案例",
+      "伪造榜单",
+      "批量灌水",
+      "隐藏文本",
+      "提示词注入",
+      "RAG 投毒",
+      "夸大或无法证明的承诺",
+    ]
+  }
+
+  if (level === "YELLOW") {
+    return [
+      "未补证据就直接执行",
+      "把排名 / 最好 / 推荐写成确定事实",
+      "使用无法核验的客户评价",
+      "承诺价格、效果或转化结果",
+      "把第三方数据当成已确认结论",
+    ]
+  }
+
+  return [
+    "跳过事实来源确认",
+    "自动发布线上内容",
+    "把系统建议包装成已审核结论",
+  ]
+}
+
+export function getHumanGateNotice(riskLevel: RepairTaskRiskLevel | string | null | undefined) {
+  const level = normalizeRiskLevel(riskLevel)
+
+  if (level === "RED") {
+    return "这不是自动修复结论。红色任务必须先由负责人改写方向或记录风险，系统不会自动发布、不会自动修改线上内容。"
+  }
+
+  if (level === "YELLOW") {
+    return "这不是自动修复结论，而是执行前的风险提示。黄色任务必须由人工补证据并确认措辞后再处理。"
+  }
+
+  return "当前阶段仅提供审核建议。最终执行仍需人工确认事实来源，系统不会自动发布、不会自动修改线上内容、不会绕过负责人审核。"
+}
+
+export function getRiskReviewSummary(
+  taskType: RepairTaskWorkbenchType | string | null | undefined,
+  riskLevel: RepairTaskRiskLevel | string | null | undefined
+) {
+  const type = normalizeWorkbenchType(taskType)
+  const level = normalizeRiskLevel(riskLevel)
+  const typeLabel = REPAIR_TASK_TYPE_LABELS[type]
+
+  if (level === "RED") {
+    return `${typeLabel} 当前为红色风险：禁止直接执行，只能记录风险或改写方向。`
+  }
+
+  if (level === "YELLOW") {
+    return `${typeLabel} 当前为黄色风险：需要补证据或人工审核后再执行。`
+  }
+
+  return `${typeLabel} 当前为绿色风险：可进入内容制作，但仍需人工确认事实来源。`
+}
+
+export function buildRepairTaskRiskReview(task: RepairTaskWorkbenchInput) {
+  const taskType = deriveRepairTaskType(task)
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+
+  return {
+    level: riskLevel,
+    reason: getRepairTaskRiskReason(task),
+    handling: getRiskExecutionDecision(riskLevel),
+    summary: getRiskReviewSummary(taskType, riskLevel),
+    executionDecision: getRiskExecutionDecision(riskLevel),
+    requiredEvidence: getRequiredEvidenceByTaskType(taskType, riskLevel),
+    prohibitedActions: getRiskProhibitedActions(riskLevel),
+    humanGateNotice: getHumanGateNotice(riskLevel),
+  }
 }
 
 export function buildRepairTaskDetailViewModel({
@@ -480,6 +616,7 @@ export function buildRepairTaskDetailViewModel({
   analysis?: RepairTaskAnalysisInput | null
 }): RepairTaskDetailViewModel {
   const base = buildRepairTaskWorkbenchViewModel(task)
+  const riskReview = buildRepairTaskRiskReview(task)
   const queryText = asString(queryRun?.query?.text) || base.evidenceSummary.relatedQuery
   const platformLabel = asString(queryRun?.query?.platform) || asString(queryRun?.provider) || "暂未记录平台"
   const competitors = getCompetitorNames(analysis?.competitorsJson)
@@ -506,11 +643,7 @@ export function buildRepairTaskDetailViewModel({
       ? `识别到竞品：${competitors.slice(0, 5).join("、")}。`
       : "暂未识别明确竞品。",
     recommendedAction: formatRepairTaskRecommendedAction(task),
-    riskReview: {
-      level: base.riskLevel,
-      reason: base.riskReason,
-      handling: getRepairTaskRiskHandling(task),
-    },
+    riskReview,
     retestPlan: formatRepairTaskRetestPlaceholder({ task, analysis }),
   }
 }
