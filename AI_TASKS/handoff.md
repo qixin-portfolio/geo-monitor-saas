@@ -9,34 +9,69 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Production Smoke Test Readiness Check：RepairTask 单条按钮 production smoke test 前准备清单 |
-| 执行分支 | `codex/production-smoke-test-readiness` |
-| 状态 | PR #23 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #23：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/23](https://github.com/qixin-portfolio/geo-monitor-saas/pull/23) |
-| 当前 main | `4cd4ec27fc51b8f47f17b22ca65f8c4ea8e9e556` |
-| 上一轮依赖 | PR #21 / PR #22 均已合并到 main |
-| 本轮性质 | docs-only，不修改功能代码 |
+| 当前任务 | RepairTask 单条按钮链路阶段收口：AI_TASKS 状态同步 |
+| 执行分支 | `codex/sync-ai-tasks-after-pr23` |
+| 状态 | PR #24 已创建，等待人工审查与合并确认；RepairTask 单条按钮链路工程阶段已完成 |
+| GitHub 入口 | PR #24：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/24](https://github.com/qixin-portfolio/geo-monitor-saas/pull/24) |
+| 当前 main | `6fc9cc56b3ac1654670464286cdd37c270e9f989` |
+| 上一轮依赖 | PR #21 / PR #22 / PR #23 均已合并到 main |
+| 本轮性质 | docs-only / AI_TASKS-only，不修改功能代码 |
 | 是否使用真实客户数据 | 否 |
+
+## 阶段结论
+
+RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记完成。
+
+已完成：
+
+- server action 已 QA。
+- 单条按钮已接入 Evidence Detail Drawer。
+- 本地 Browser QA：15 pass / 0 fail / 0 blocked。
+- Staging QA：19 pass / 0 fail / 0 blocked。
+- PR #21 已合并：Staging RepairTask Button QA Record。
+- PR #22 已合并：Production Release Gate。
+- PR #23 已合并：Production Smoke Test Readiness Check。
+- Production Release Gate 已建立。
+- Production Smoke Test Readiness Check 已建立。
+- 当前 open PR 只有 #3，且与 RepairTask 单条按钮链路无关。
+
+## 当前产品能力边界
+
+当前只完成“单条、用户确认、可追踪”的修复任务加入链路。
+
+仍禁止：
+
+- 直接 production rollout。
+- 批量创建。
+- 无人确认执行。
+- 全租户开放。
+- Lead Attribution。
+- PDF。
+- 新增写库路径。
+- 新增 public API。
+- 绕过确认弹窗。
+- 把系统推断说成第三方平台确认结论。
+
+## 下一阶段方向
+
+下一阶段不是 production rollout，也不是批量自动化。
+
+下一阶段应进入：“证据化修复工作台”设计。
+
+阶段 2 目标：
+
+- RepairTask 风险等级：绿 / 黄 / 红。
+- 修复任务类型：FAQ、案例页、资质页、服务页、Schema、对比页。
+- 每条任务绑定证据依据。
+- 修复前后复测。
+- 生成老板看得懂的 GEO 修复报告。
 
 ## 本轮交接
 
 ### 修改文件
 
-- `docs/qa/repair-task-production-smoke-test-readiness-check.md`：新增 production smoke test 前 readiness checklist。
-- `AI_TASKS/current.md`：同步当前任务为 Production Smoke Test Readiness Check，并记录 PR #21 / PR #22 已合并。
-- `AI_TASKS/handoff.md`：同步交接状态，移除 PR #22 等待审查 / 合并确认的过时状态。
-
-### Readiness Check 摘要
-
-- 本文档不是 production smoke test。
-- 本文档不是 production rollout。
-- 本文档只用于判断是否具备安排小范围 production smoke test 的条件。
-- 已记录本地 Browser QA 15 pass / 0 fail / 0 blocked。
-- 已记录 Staging Button QA 19 pass / 0 fail / 0 blocked。
-- 已记录 Production Release Gate 已合并。
-- production smoke test 前必须人工确认 Production Vercel、Production domain、Production DB、Production Clerk、route protection、tenant resolution、发布窗口和回滚路径。
-- 如果未来执行 smoke test，最多只允许内部测试账号和内部测试 tenant 创建 1 条 `GeoContentTask`。
-- 禁止全租户开放、批量创建、无人确认执行、新写库路径、公开 API 和 destructive production DB 操作。
+- `AI_TASKS/current.md`：同步阶段完成状态和下一阶段方向。
+- `AI_TASKS/handoff.md`：同步交接状态，移除上一轮 PR #23 相关过时交接状态。
 
 ### 安全边界
 
@@ -58,6 +93,7 @@
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不进入全租户开放。
+- 不启动“证据化修复工作台”功能开发。
 
 ### 验证记录
 
@@ -68,17 +104,17 @@
 
 ### 风险与注意事项
 
-- 本轮只是 readiness 文档，不是 production smoke test。
-- 本轮不是 production rollout。
-- readiness 文档合并后，仍需人工决定是否执行 Production Smoke Test。
-- Production Smoke Test 如被批准，必须限制为内部测试账号和内部测试 tenant。
-- 后续不应直接进入批量创建、无人确认执行或全租户开放。
+- 本轮只是状态同步，不是 production rollout。
+- 本轮不启动“证据化修复工作台”功能开发。
+- 后续即使进入“证据化修复工作台”设计，也不应直接进入批量创建或无人确认执行。
+- Production Smoke Test 是否执行仍需单独 Human Gate。
 
 ### 下一步建议
 
-1. 等待 ChatGPT / 用户审查 PR #23。
-2. PR 审查通过并合并后，再由人工决定是否进入 Production Smoke Test。
+1. 等待 ChatGPT / 用户审查 PR #24。
+2. 合并后，下一阶段可讨论“证据化修复工作台”设计。
 3. 不要直接 production rollout。
+4. 不要进入批量创建或无人确认执行。
 
 ---
 
@@ -104,3 +140,4 @@
 | 2026-07-01 | RepairTask Button Browser QA | PR #20 | 已合并 | 本地非生产 Button Browser QA 15 pass / 0 fail / 0 blocked |
 | 2026-07-02 | Staging RepairTask Button QA Record | PR #21 | 已合并 | Staging Button QA 19 pass / 0 fail / 0 blocked |
 | 2026-07-02 | RepairTask Production Release Gate | PR #22 | 已合并 | production 发布前 Gate，非 rollout |
+| 2026-07-02 | Production Smoke Test Readiness Check | PR #23 | 已合并 | production smoke test 前人工准备清单，非 rollout |
