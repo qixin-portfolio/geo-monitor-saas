@@ -71,7 +71,7 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 ### 修改文件
 
 - `AI_TASKS/current.md`：同步阶段完成状态和下一阶段方向。
-- `AI_TASKS/handoff.md`：同步交接状态，移除 PR #23 等待审查 / 合并确认的过时状态。
+- `AI_TASKS/handoff.md`：同步交接状态，移除上一轮 PR #23 相关过时交接状态。
 
 ### 安全边界
 
