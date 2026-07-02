@@ -10,6 +10,25 @@ export type RepairTaskWorkbenchType =
 
 export type RepairTaskRiskLevel = "GREEN" | "YELLOW" | "RED"
 
+export type RepairTaskWorkflowStatus =
+  | "DRAFT"
+  | "READY"
+  | "NEEDS_REVIEW"
+  | "IN_PROGRESS"
+  | "PUBLISHED"
+  | "RETEST_PENDING"
+  | "IMPROVED"
+  | "NO_CHANGE"
+  | "BLOCKED"
+  | "REJECTED"
+
+export type RepairTaskLifecycleStep = {
+  status: RepairTaskWorkflowStatus
+  label: string
+  description: string
+  state: "completed" | "current" | "pending" | "blocked"
+}
+
 export type RepairTaskWorkbenchInput = {
   title?: string | null
   type?: string | null
@@ -95,6 +114,18 @@ export type RepairTaskDetailViewModel = RepairTaskWorkbenchViewModel & {
     prohibitedActions: string[]
     humanGateNotice: string
   }
+  workflow: {
+    status: RepairTaskWorkflowStatus
+    label: string
+    description: string
+    nextAction: string
+    humanGateRequired: boolean
+    canRetest: boolean
+    canReport: boolean
+    warning: string
+    steps: RepairTaskLifecycleStep[]
+    safetyNotice: string
+  }
   retestPlan: {
     beforeState: string
     pendingState: string
@@ -127,6 +158,58 @@ export const REPAIR_TASK_RISK_LABELS: Record<RepairTaskRiskLevel, string> = {
 }
 
 const RISK_LEVELS = ["GREEN", "YELLOW", "RED"] as const
+
+const WORKFLOW_STATUSES = [
+  "DRAFT",
+  "READY",
+  "NEEDS_REVIEW",
+  "IN_PROGRESS",
+  "PUBLISHED",
+  "RETEST_PENDING",
+  "IMPROVED",
+  "NO_CHANGE",
+  "BLOCKED",
+  "REJECTED",
+] as const
+
+const REPAIR_TASK_STATUS_LABELS: Record<RepairTaskWorkflowStatus, string> = {
+  DRAFT: "草稿",
+  READY: "可执行",
+  NEEDS_REVIEW: "需审核",
+  IN_PROGRESS: "处理中",
+  PUBLISHED: "已发布",
+  RETEST_PENDING: "待复测",
+  IMPROVED: "复测改善",
+  NO_CHANGE: "复测暂无变化",
+  BLOCKED: "阻塞",
+  REJECTED: "已拒绝",
+}
+
+const REPAIR_TASK_STATUS_DESCRIPTIONS: Record<RepairTaskWorkflowStatus, string> = {
+  DRAFT: "任务刚进入修复池，还需要确认证据、风险和建议产出物。",
+  READY: "任务证据和风险较清楚，可以进入人工内容制作，但不代表自动执行。",
+  NEEDS_REVIEW: "任务涉及证据、措辞或风险判断，需要人工审核后再决定是否推进。",
+  IN_PROGRESS: "任务已进入人工处理阶段，下一步是完成内容制作并检查事实来源。",
+  PUBLISHED: "内容已完成发布或导出记录，下一步应准备同一 query 的人工复测。",
+  RETEST_PENDING: "任务已具备复测条件，等待人工使用同一 query 对比修复前后变化。",
+  IMPROVED: "复测显示方向有改善，可以整理给老板看的摘要，但仍需人工复核。",
+  NO_CHANGE: "复测暂无明显变化，需要判断是否补更多证据、调整页面或延后观察。",
+  BLOCKED: "当前状态无法安全推进，可能缺少字段、状态未知或风险没有被解释清楚。",
+  REJECTED: "任务已被跳过或拒绝，不应继续执行，只能保留记录或重新创建更安全的任务。",
+}
+
+const WORKFLOW_STATUS_ORDER: RepairTaskWorkflowStatus[] = [
+  "DRAFT",
+  "READY",
+  "NEEDS_REVIEW",
+  "IN_PROGRESS",
+  "PUBLISHED",
+  "RETEST_PENDING",
+  "IMPROVED",
+  "NO_CHANGE",
+  "BLOCKED",
+  "REJECTED",
+]
 
 const REPAIR_TASK_TYPE_BY_METADATA: Record<string, RepairTaskWorkbenchType> = {
   faq_addition: "FAQ",
@@ -218,6 +301,13 @@ function normalizeRiskLevel(value: unknown): RepairTaskRiskLevel {
   return RISK_LEVELS.includes(value as RepairTaskRiskLevel)
     ? (value as RepairTaskRiskLevel)
     : "YELLOW"
+}
+
+function normalizeWorkflowStatusValue(value: unknown): RepairTaskWorkflowStatus | null {
+  const text = asString(value).toUpperCase()
+  return WORKFLOW_STATUSES.includes(text as RepairTaskWorkflowStatus)
+    ? (text as RepairTaskWorkflowStatus)
+    : null
 }
 
 function normalizeWorkbenchType(value: unknown): RepairTaskWorkbenchType {
@@ -757,6 +847,115 @@ export function getHumanGateNotice(riskLevel: RepairTaskRiskLevel | string | nul
   return "当前阶段仅提供审核建议。最终执行仍需人工确认事实来源，系统不会自动发布、不会自动修改线上内容、不会绕过负责人审核。"
 }
 
+export function normalizeRepairTaskStatus(task: RepairTaskWorkbenchInput): RepairTaskWorkflowStatus {
+  const directStatus = normalizeWorkflowStatusValue(task.status)
+  if (directStatus) return directStatus
+
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+
+  if (task.status === "TODO") return riskLevel === "RED" ? "NEEDS_REVIEW" : "READY"
+  if (task.status === "BRIEF_READY") return "IN_PROGRESS"
+  if (task.status === "DRAFT_READY") return "NEEDS_REVIEW"
+  if (task.status === "REVIEW_NEEDED") return "NEEDS_REVIEW"
+  if (task.status === "APPROVED") return "RETEST_PENDING"
+  if (task.status === "EXPORTED") return "PUBLISHED"
+  if (task.status === "SKIPPED") return "REJECTED"
+
+  return "BLOCKED"
+}
+
+export function getRepairTaskStatusLabel(status: RepairTaskWorkflowStatus | string | null | undefined) {
+  const normalized = normalizeWorkflowStatusValue(status) ?? "BLOCKED"
+  return REPAIR_TASK_STATUS_LABELS[normalized]
+}
+
+export function getRepairTaskStatusDescription(status: RepairTaskWorkflowStatus | string | null | undefined) {
+  const normalized = normalizeWorkflowStatusValue(status) ?? "BLOCKED"
+  return REPAIR_TASK_STATUS_DESCRIPTIONS[normalized]
+}
+
+export function getRepairTaskNextAction(task: RepairTaskWorkbenchInput) {
+  const status = normalizeRepairTaskStatus(task)
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+
+  if (riskLevel === "RED") {
+    return "先记录风险或改写修复方向，不要直接进入内容制作。"
+  }
+
+  const actions: Record<RepairTaskWorkflowStatus, string> = {
+    DRAFT: "先补齐证据依据、建议产出物和风险说明。",
+    READY: "由人工确认事实来源后，进入内容制作。",
+    NEEDS_REVIEW: "补充证据并由负责人确认措辞和执行边界。",
+    IN_PROGRESS: "完成内容制作后，检查是否满足验收标准。",
+    PUBLISHED: "准备使用同一 query 做人工复测。",
+    RETEST_PENDING: "执行人工复测，并记录是否改善、暂无变化或风险未通过。",
+    IMPROVED: "整理老板可读的修复摘要和复测依据。",
+    NO_CHANGE: "复盘证据缺口，决定补证据、改页面或继续观察。",
+    BLOCKED: "先确认任务状态和证据来源，不能直接推进。",
+    REJECTED: "停止执行；如仍有价值，重新创建更安全的任务。",
+  }
+
+  return actions[status]
+}
+
+export function getRepairTaskHumanGate(task: RepairTaskWorkbenchInput) {
+  const status = normalizeRepairTaskStatus(task)
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+
+  return (
+    riskLevel !== "GREEN" ||
+    status === "NEEDS_REVIEW" ||
+    status === "BLOCKED" ||
+    status === "REJECTED" ||
+    status === "DRAFT"
+  )
+}
+
+export function getRepairTaskLifecycleSteps(task: RepairTaskWorkbenchInput): RepairTaskLifecycleStep[] {
+  const currentStatus = normalizeRepairTaskStatus(task)
+  const currentIndex = WORKFLOW_STATUS_ORDER.indexOf(currentStatus)
+  const isUnsafeTerminalStatus = currentStatus === "BLOCKED" || currentStatus === "REJECTED"
+
+  return WORKFLOW_STATUS_ORDER.map((status, index) => ({
+    status,
+    label: getRepairTaskStatusLabel(status),
+    description: getRepairTaskStatusDescription(status),
+    state: isUnsafeTerminalStatus
+      ? status === currentStatus ? "blocked" : "pending"
+      : index < currentIndex
+        ? "completed"
+        : status === currentStatus
+          ? "current"
+          : "pending",
+  }))
+}
+
+export function getRepairTaskWorkflowViewModel(task: RepairTaskWorkbenchInput) {
+  const status = normalizeRepairTaskStatus(task)
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+  const humanGateRequired = getRepairTaskHumanGate(task)
+  const canRetest = status === "PUBLISHED" || status === "RETEST_PENDING"
+  const canReport = status === "IMPROVED" || status === "NO_CHANGE"
+  const warning = riskLevel === "RED"
+    ? "红色风险不能直接执行，必须人工改写方向或记录风险。"
+    : status === "BLOCKED"
+      ? "当前状态无法安全识别，不能当作可执行任务。"
+      : "本页只展示下一步建议，不会自动更新状态、触发复测或生成报告。"
+
+  return {
+    status,
+    label: getRepairTaskStatusLabel(status),
+    description: getRepairTaskStatusDescription(status),
+    nextAction: getRepairTaskNextAction(task),
+    humanGateRequired,
+    canRetest,
+    canReport,
+    warning,
+    steps: getRepairTaskLifecycleSteps(task),
+    safetyNotice: "本页仅展示人工推进建议，不会自动执行、不生成报告、不触发复测，也不会修改线上内容。",
+  }
+}
+
 export function getRiskReviewSummary(
   taskType: RepairTaskWorkbenchType | string | null | undefined,
   riskLevel: RepairTaskRiskLevel | string | null | undefined
@@ -803,6 +1002,7 @@ export function buildRepairTaskDetailViewModel({
 }): RepairTaskDetailViewModel {
   const base = buildRepairTaskWorkbenchViewModel(task)
   const riskReview = buildRepairTaskRiskReview(task)
+  const workflow = getRepairTaskWorkflowViewModel(task)
   const queryText = asString(queryRun?.query?.text) || base.evidenceSummary.relatedQuery
   const platformLabel = asString(queryRun?.query?.platform) || asString(queryRun?.provider) || "暂未记录平台"
   const competitors = getCompetitorNames(analysis?.competitorsJson)
@@ -830,6 +1030,7 @@ export function buildRepairTaskDetailViewModel({
       : "暂未识别明确竞品。",
     recommendedAction: formatRepairTaskRecommendedAction(task),
     riskReview,
+    workflow,
     retestPlan: formatRepairTaskRetestPlaceholder({ task, queryRun, analysis }),
   }
 }

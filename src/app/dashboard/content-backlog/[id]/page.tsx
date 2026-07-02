@@ -468,8 +468,61 @@ export default async function ContentTaskDetailPage({
 
       <section className="rounded-lg border bg-card p-5">
         <div className="mb-3 flex items-center gap-2">
+          <Target className="h-4 w-4 text-primary" />
+          <h2 className="font-medium">5. 状态流与下一步动作</h2>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
+            <p className="text-xs text-muted-foreground">当前状态</p>
+            <p className="mt-1 font-medium">
+              {detailView.workflow.status} / {detailView.workflow.label}
+            </p>
+            <p className="mt-2 text-muted-foreground">{detailView.workflow.description}</p>
+          </div>
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
+            <p className="text-xs text-muted-foreground">下一步建议</p>
+            <p className="mt-1">{detailView.workflow.nextAction}</p>
+          </div>
+          <div className="grid gap-3 text-sm md:grid-cols-3 lg:col-span-2">
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">是否需要人工确认</p>
+              <p className="mt-1 font-medium">{detailView.workflow.humanGateRequired ? "是" : "否"}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">是否可进入复测</p>
+              <p className="mt-1 font-medium">{detailView.workflow.canRetest ? "是" : "否"}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">是否可进入老板报告</p>
+              <p className="mt-1 font-medium">{detailView.workflow.canReport ? "是" : "否"}</p>
+            </div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-4 text-sm lg:col-span-2">
+            <p className="text-xs text-muted-foreground">状态流步骤</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {detailView.workflow.steps.map((step) => (
+                <div key={step.status} className="rounded bg-background p-3">
+                  <p className="font-medium">
+                    {step.label}
+                    <span className="ml-2 text-xs text-muted-foreground">{step.state}</span>
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-dashed p-4 text-sm lg:col-span-2">
+            <p className="text-xs text-muted-foreground">安全提示</p>
+            <p className="mt-1">{detailView.workflow.warning}</p>
+            <p className="mt-2 text-muted-foreground">{detailView.workflow.safetyNotice}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border bg-card p-5">
+        <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="font-medium">5. 复测与验收计划</h2>
+          <h2 className="font-medium">6. 复测与验收计划</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-md bg-muted/40 p-3 text-sm lg:col-span-2">
