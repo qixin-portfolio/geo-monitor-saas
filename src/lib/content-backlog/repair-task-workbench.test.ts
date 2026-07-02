@@ -2,16 +2,24 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildRepairTaskRiskReview,
+  buildRepairTaskRetestPlan,
   buildRepairTaskDetailViewModel,
   buildRepairTaskWorkbenchViewModel,
   deriveRepairTaskRiskLevel,
   deriveRepairTaskType,
+  getBossReportPlaceholder,
   getRepairTaskAcceptanceCriteria,
   getRepairTaskEvidenceSummary,
   getRepairTaskExecutionHint,
   getRepairTaskRiskHandling,
   getRepairTaskRiskReason,
   getRequiredEvidenceByTaskType,
+  getRetestGoalByTaskType,
+  getRetestImprovementCriteria,
+  getRetestNoChangeCriteria,
+  getRetestObservationMetrics,
+  getRetestRiskCriteria,
+  getRetestStatusLabel,
   getRiskExecutionDecision,
   getRiskProhibitedActions,
   getHumanGateNotice,
@@ -154,7 +162,8 @@ describe("repair task workbench view model", () => {
     expect(detail.competitorSummary).toContain("竞品 A")
     expect(detail.recommendedAction.outputType).toBe("对比页")
     expect(detail.riskReview.handling).toContain("人工确认")
-    expect(detail.retestPlan.metrics).toContain("AI 是否推荐品牌")
+    expect(detail.retestPlan.observationMetrics).toContain("AI 是否推荐品牌")
+    expect(detail.retestPlan.reportSummary).toContain("不承诺排名")
   })
 
   it("falls back when sourceReason, recommendedAngle, queryRun, and analysis are missing", () => {
@@ -306,6 +315,123 @@ describe("repair task workbench view model", () => {
     const before = structuredClone(task)
 
     buildRepairTaskRiskReview(task)
+
+    expect(task).toEqual(before)
+  })
+
+  it("returns retest goals for each task type", () => {
+    expect(getRetestGoalByTaskType("FAQ").join(" ")).toContain("服务范围")
+    expect(getRetestGoalByTaskType("CASE_STUDY").join(" ")).toContain("真实案例")
+    expect(getRetestGoalByTaskType("QUALIFICATION").join(" ")).toContain("资质")
+    expect(getRetestGoalByTaskType("SERVICE_PAGE").join(" ")).toContain("服务区域")
+    expect(getRetestGoalByTaskType("SCHEMA").join(" ")).toContain("结构化")
+    expect(getRetestGoalByTaskType("COMPARISON").join(" ")).toContain("事实化")
+    expect(getRetestGoalByTaskType("SOURCE_BUILDING").join(" ")).toContain("第三方来源")
+    expect(getRetestGoalByTaskType("CONTENT_UPDATE").join(" ")).toContain("旧内容")
+    expect(getRetestGoalByTaskType("UNKNOWN_TYPE").join(" ")).toContain("旧内容")
+  })
+
+  it("returns retest observation metrics with type and risk additions", () => {
+    expect(getRetestObservationMetrics("FAQ", "GREEN")).toEqual(
+      expect.arrayContaining(["AI 是否提及品牌", "AI 是否推荐品牌", "风险等级是否下降"])
+    )
+    expect(getRetestObservationMetrics("SCHEMA", "GREEN")).toContain("结构化字段是否更容易被识别")
+    expect(getRetestObservationMetrics("COMPARISON", "YELLOW")).toContain("对比和承诺措辞是否保持克制")
+    expect(getRetestObservationMetrics("UNKNOWN_TYPE", "UNKNOWN")).toContain("对比和承诺措辞是否保持克制")
+  })
+
+  it("returns retest improvement and no-change criteria", () => {
+    expect(getRetestImprovementCriteria("FAQ")).toEqual(
+      expect.arrayContaining(["品牌从未提及变为被提及。", "品牌从未推荐变为被推荐。"])
+    )
+    expect(getRetestImprovementCriteria("SOURCE_BUILDING").join(" ")).toContain("第三方来源")
+    expect(getRetestNoChangeCriteria("CONTENT_UPDATE").join(" ")).toContain("更新时间")
+    expect(getRetestNoChangeCriteria("UNKNOWN_TYPE")).toContain("回答内容无明显变化。")
+  })
+
+  it("returns risk criteria for red and fallback risk levels", () => {
+    expect(getRetestRiskCriteria("RED")).toEqual(
+      expect.arrayContaining(["触发红色风险，禁止把结果包装成改善。", "红色风险任务只能记录风险或改写方向，不能直接执行。"])
+    )
+    expect(getRetestRiskCriteria("UNKNOWN").join(" ")).toContain("黄色风险")
+  })
+
+  it("returns a boss report placeholder without overclaiming", () => {
+    const placeholder = getBossReportPlaceholder("COMPARISON", "RED")
+
+    expect(placeholder).toContain("当前页面只展示")
+    expect(placeholder).toContain("不生成正式报告")
+    expect(placeholder).toContain("不承诺排名、推荐或流量提升")
+  })
+
+  it("returns retest status labels from current analysis state", () => {
+    expect(getRetestStatusLabel({ mentionStatus: "RECOMMENDED" })).toContain("当前已被推荐")
+    expect(getRetestStatusLabel({ mentionStatus: "MENTIONED" })).toContain("已被提及")
+    expect(getRetestStatusLabel({ rankType: "EXPLICIT" })).toContain("存在推荐语境")
+    expect(getRetestStatusLabel({})).toContain("未形成稳定提及或推荐")
+  })
+
+  it("builds a retest plan from task, query run, and analysis", () => {
+    const plan = buildRepairTaskRetestPlan(
+      {
+        type: "FAQ",
+        sourceQuery: "品牌如何被 AI 推荐？",
+        evidenceJson: {
+          relatedQuery: "品牌如何被 AI 推荐？",
+          trigger: "missing_faq",
+          repairTask: { taskType: "faq_addition" },
+        },
+      },
+      {
+        query: { text: "品牌如何被 AI 推荐？", platform: "manual" },
+      },
+      {
+        mentionStatus: "MENTIONED",
+        visibilityScore: 37,
+      }
+    )
+
+    expect(plan.beforeState).toContain("品牌如何被 AI 推荐")
+    expect(plan.beforeState).toContain("已提及但未明确推荐")
+    expect(plan.beforeState).toContain("missing_faq")
+    expect(plan.retestGoals.join(" ")).toContain("常见问题")
+    expect(plan.pendingState).toContain("不代表已经完成复测")
+    expect(plan.reportSummary).toContain("不承诺排名")
+  })
+
+  it("does not crash on malformed retest inputs", () => {
+    const detail = buildRepairTaskDetailViewModel({
+      task: {
+        type: "BAD_TYPE",
+        evidenceJson: ["bad shape"],
+        briefJson: "bad shape",
+      },
+      queryRun: {
+        rawOutput: null,
+        query: null,
+      },
+      analysis: null,
+    })
+
+    expect(detail.retestPlan.beforeState).toContain("暂未关联 query")
+    expect(detail.retestPlan.retestGoals.join(" ")).toContain("旧内容")
+    expect(detail.retestPlan.riskCriteria.join(" ")).toContain("黄色或红色风险")
+  })
+
+  it("does not mutate task input while building a retest plan", () => {
+    const task = {
+      type: "SCHEMA",
+      sourceReason: "补充结构化数据。",
+      evidenceJson: {
+        repairTask: {
+          taskType: "schema_fix",
+          nextSteps: ["补 FAQ Schema"],
+        },
+      },
+    }
+    const before = structuredClone(task)
+
+    buildRepairTaskRetestPlan(task, null, null)
 
     expect(task).toEqual(before)
   })

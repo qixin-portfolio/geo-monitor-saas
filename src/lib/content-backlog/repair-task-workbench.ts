@@ -99,6 +99,12 @@ export type RepairTaskDetailViewModel = RepairTaskWorkbenchViewModel & {
     beforeState: string
     pendingState: string
     metrics: string[]
+    retestGoals: string[]
+    observationMetrics: string[]
+    improvementCriteria: string[]
+    noChangeCriteria: string[]
+    riskCriteria: string[]
+    statusLabel: string
     reportSummary: string
   }
 }
@@ -389,11 +395,186 @@ export function formatRepairTaskRecommendedAction(task: RepairTaskWorkbenchInput
 
 export function formatRepairTaskRetestPlaceholder({
   task,
+  queryRun,
   analysis,
 }: {
   task: RepairTaskWorkbenchInput
+  queryRun?: RepairTaskQueryRunInput | null
   analysis?: RepairTaskAnalysisInput | null
 }) {
+  return buildRepairTaskRetestPlan(task, queryRun, analysis)
+}
+
+export function getRetestGoalByTaskType(taskType: RepairTaskWorkbenchType | string | null | undefined) {
+  const type = normalizeWorkbenchType(taskType)
+
+  const goals: Record<RepairTaskWorkbenchType, string[]> = {
+    FAQ: [
+      "AI 能否更准确理解服务范围和常见问题。",
+      "品牌是否更容易在相关问答中被提及。",
+    ],
+    CASE_STUDY: [
+      "AI 是否能引用真实案例作为推荐依据。",
+      "品牌是否在本地 / 行业问题中更具可信度。",
+    ],
+    QUALIFICATION: [
+      "AI 是否能识别资质、认证和背书。",
+      "品牌可信度是否改善。",
+    ],
+    SERVICE_PAGE: [
+      "AI 是否能理解服务范围、服务区域和服务对象。",
+      "推荐语是否更准确。",
+    ],
+    SCHEMA: [
+      "页面结构化信息是否更容易被机器读取。",
+      "FAQ / LocalBusiness / Organization / Article 信息是否更清楚。",
+    ],
+    COMPARISON: [
+      "对比表达是否更事实化、更克制。",
+      "是否避免攻击竞品。",
+    ],
+    SOURCE_BUILDING: [
+      "是否新增可公开访问的第三方来源。",
+      "AI 是否更容易找到外部证据。",
+    ],
+    CONTENT_UPDATE: [
+      "旧内容是否更准确、更完整。",
+      "更新时间和事实依据是否更清楚。",
+    ],
+  }
+
+  return goals[type]
+}
+
+export function getRetestObservationMetrics(
+  taskType: RepairTaskWorkbenchType | string | null | undefined,
+  riskLevel: RepairTaskRiskLevel | string | null | undefined
+) {
+  const type = normalizeWorkbenchType(taskType)
+  const level = normalizeRiskLevel(riskLevel)
+  const metrics = [
+    "AI 是否提及品牌",
+    "AI 是否推荐品牌",
+    "推荐语是否更准确",
+    "是否出现新的引用来源",
+    "是否仍被竞品压制",
+    "情感倾向是否改善",
+    "是否出现事实错误",
+    "风险等级是否下降",
+  ]
+
+  if (type === "SCHEMA") {
+    metrics.push("结构化字段是否更容易被识别")
+  }
+
+  if (type === "COMPARISON" || level !== "GREEN") {
+    metrics.push("对比和承诺措辞是否保持克制")
+  }
+
+  return Array.from(new Set(metrics))
+}
+
+export function getRetestImprovementCriteria(taskType: RepairTaskWorkbenchType | string | null | undefined) {
+  const type = normalizeWorkbenchType(taskType)
+  const criteria = [
+    "品牌从未提及变为被提及。",
+    "品牌从未推荐变为被推荐。",
+    "AI 回答开始引用新补充的案例 / FAQ / 资质 / 服务页。",
+    "推荐语更准确。",
+    "竞品压制减弱。",
+    "情感从中性 / 负向变为中性偏正向。",
+  ]
+
+  if (type === "SCHEMA") {
+    criteria.push("AI 回答更稳定地理解页面结构和 FAQ / LocalBusiness / Organization / Article 信息。")
+  }
+
+  if (type === "SOURCE_BUILDING") {
+    criteria.push("AI 回答开始出现可公开访问的第三方来源。")
+  }
+
+  return criteria
+}
+
+export function getRetestNoChangeCriteria(taskType: RepairTaskWorkbenchType | string | null | undefined) {
+  const type = normalizeWorkbenchType(taskType)
+  const criteria = [
+    "AI 仍未提及品牌。",
+    "AI 仍只推荐竞品。",
+    "未引用新增内容。",
+    "回答内容无明显变化。",
+  ]
+
+  if (type === "CONTENT_UPDATE") {
+    criteria.push("旧内容更新后，AI 回答仍没有体现新的更新时间、范围或事实依据。")
+  }
+
+  return criteria
+}
+
+export function getRetestRiskCriteria(riskLevel: RepairTaskRiskLevel | string | null | undefined) {
+  const level = normalizeRiskLevel(riskLevel)
+  const criteria = [
+    "AI 出现错误引用。",
+    "夸大表达被模型采纳。",
+    "出现虚假或无法证明的表述。",
+  ]
+
+  if (level === "RED") {
+    return [
+      ...criteria,
+      "触发红色风险，禁止把结果包装成改善。",
+      "红色风险任务只能记录风险或改写方向，不能直接执行。",
+    ]
+  }
+
+  if (level === "YELLOW") {
+    return [
+      ...criteria,
+      "补证据不足，黄色风险仍未通过人工确认。",
+    ]
+  }
+
+  return [
+    ...criteria,
+    "原本低风险任务出现新的黄色或红色风险。",
+  ]
+}
+
+export function getBossReportPlaceholder(
+  taskType: RepairTaskWorkbenchType | string | null | undefined,
+  riskLevel: RepairTaskRiskLevel | string | null | undefined
+) {
+  const type = normalizeWorkbenchType(taskType)
+  const level = normalizeRiskLevel(riskLevel)
+  const typeLabel = REPAIR_TASK_TYPE_LABELS[type]
+  const riskLabel = REPAIR_TASK_RISK_LABELS[level]
+
+  return `修复完成后，系统将对同一 query 进行复测，并对比修复前后的品牌提及、推荐语、引用源和风险变化。当前页面只展示 ${typeLabel} / ${riskLabel} 风险任务的验收计划，不生成正式报告，不承诺排名、推荐或流量提升。`
+}
+
+export function getRetestStatusLabel({
+  mentionStatus,
+  rankType,
+}: {
+  mentionStatus?: string | null
+  rankType?: string | null
+} = {}) {
+  if (mentionStatus === "RECOMMENDED") return "当前已被推荐，复测重点是推荐语是否更准确、证据是否更充分。"
+  if (mentionStatus === "MENTIONED") return "当前已被提及但未明确推荐，复测重点是能否进入推荐语境。"
+  if (rankType === "EXPLICIT" || rankType === "IMPLIED") return "当前存在推荐语境，复测重点是品牌是否获得更清晰的位置。"
+  return "当前未形成稳定提及或推荐，复测重点是品牌是否被自然带入回答。"
+}
+
+export function buildRepairTaskRetestPlan(
+  task: RepairTaskWorkbenchInput,
+  queryRun?: RepairTaskQueryRunInput | null,
+  analysis?: RepairTaskAnalysisInput | null
+) {
+  const taskType = deriveRepairTaskType(task)
+  const riskLevel = deriveRepairTaskRiskLevel(task)
+  const evidenceSummary = getRepairTaskEvidenceSummary(task)
+  const queryText = asString(queryRun?.query?.text) || evidenceSummary.relatedQuery
   const visibility = typeof analysis?.visibilityScore === "number"
     ? `${Math.round(analysis.visibilityScore)} 分`
     : "暂未识别"
@@ -402,17 +583,22 @@ export function formatRepairTaskRetestPlaceholder({
     : analysis?.mentionStatus === "MENTIONED"
       ? "已提及但未明确推荐"
       : "未形成稳定推荐"
+  const statusLabel = getRetestStatusLabel({
+    mentionStatus: analysis?.mentionStatus,
+    rankType: analysis?.rankType,
+  })
 
   return {
-    beforeState: `修复前：${mention}，可见度 ${visibility}。`,
-    pendingState: "待复测：内容更新后，使用同一 query 对比下一轮 AI 回答。",
-    metrics: [
-      "AI 是否提及品牌",
-      "AI 是否推荐品牌",
-      "引用源是否变化",
-      "情感是否改善",
-    ],
-    reportSummary: `报告占位：后续将基于“${getRepairTaskEvidenceSummary(task).relatedQuery}”记录修复前后变化，本轮不生成 PDF。`,
+    beforeState: `这条任务来自“${queryText}”的 AI 监测。修复前状态：${mention}，可见度 ${visibility}；证据缺口为“${evidenceSummary.evidenceGap}”，任务类型为 ${REPAIR_TASK_TYPE_LABELS[taskType]}，风险等级为 ${REPAIR_TASK_RISK_LABELS[riskLevel]}。`,
+    pendingState: "当前只是复测计划，不代表已经完成复测。修复后应使用同一 query 对比下一轮 AI 回答。",
+    metrics: getRetestObservationMetrics(taskType, riskLevel),
+    retestGoals: getRetestGoalByTaskType(taskType),
+    observationMetrics: getRetestObservationMetrics(taskType, riskLevel),
+    improvementCriteria: getRetestImprovementCriteria(taskType),
+    noChangeCriteria: getRetestNoChangeCriteria(taskType),
+    riskCriteria: getRetestRiskCriteria(riskLevel),
+    statusLabel,
+    reportSummary: getBossReportPlaceholder(taskType, riskLevel),
   }
 }
 
@@ -644,6 +830,6 @@ export function buildRepairTaskDetailViewModel({
       : "暂未识别明确竞品。",
     recommendedAction: formatRepairTaskRecommendedAction(task),
     riskReview,
-    retestPlan: formatRepairTaskRetestPlaceholder({ task, analysis }),
+    retestPlan: formatRepairTaskRetestPlaceholder({ task, queryRun, analysis }),
   }
 }
