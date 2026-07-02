@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | RepairTask Risk Review 审核状态设计 v0.1.2 / Stage 2.2 |
 | 执行分支 | `codex/repair-task-risk-review-v0.1` |
-| 状态 | 本地实现与验证完成，PR 待创建 |
-| GitHub 入口 | 待创建 |
+| 状态 | PR #27 已创建，等待人工审查 |
+| GitHub 入口 | [PR #27](https://github.com/qixin-portfolio/geo-monitor-saas/pull/27) |
 | 当前 main | `a8db463df222b451f7a74107476730d94f48a88b` |
 | 上一轮依赖 | PR #21 / #22 / #23 / #24 / #25 / #26 均已合并到 main |
 | 本轮性质 | Risk Review 展示 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
@@ -100,8 +100,8 @@ Risk Review 区块升级为执行决策卡：
 
 ## 下一步建议
 
-1. 创建 PR，等待人工审查。
-2. 人工审查重点看 Risk Review 文案是否克制、是否无新增写库路径、是否保持 tenant-scoped detail query。
+1. 人工审查 PR #27。
+2. 审查重点看 Risk Review 文案是否克制、是否无新增写库路径、是否保持 tenant-scoped detail query。
 3. 不自动合并，不进入 production rollout。
 
 ---
