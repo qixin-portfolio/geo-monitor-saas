@@ -422,15 +422,18 @@ export default async function ContentTaskDetailPage({
   if (!tenant) notFound()
 
   const prisma = getPrisma()
-  const task = await prisma.geoContentTask.findUnique({
-    where: { id },
+  const task = await prisma.geoContentTask.findFirst({
+    where: { id, tenantId: tenant.id },
   })
 
-  if (!task || task.tenantId !== tenant.id) notFound()
+  if (!task) notFound()
 
   const runByTask = task.queryRunId
-    ? await prisma.queryRun.findUnique({
-        where: { id: task.queryRunId },
+    ? await prisma.queryRun.findFirst({
+        where: {
+          id: task.queryRunId,
+          query: { tenantId: tenant.id },
+        },
         include: {
           query: true,
           analysis: true,
@@ -439,8 +442,11 @@ export default async function ContentTaskDetailPage({
     : null
   const runByAnalysis = !runByTask && task.analysisId
     ? (
-        await prisma.queryRunAnalysis.findUnique({
-          where: { id: task.analysisId },
+        await prisma.queryRunAnalysis.findFirst({
+          where: {
+            id: task.analysisId,
+            queryRun: { query: { tenantId: tenant.id } },
+          },
           include: {
             queryRun: {
               include: {
