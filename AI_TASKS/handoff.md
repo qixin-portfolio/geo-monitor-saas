@@ -9,116 +9,81 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | 修复 manual monitoring run fire-and-forget 导致 batch 卡 RUNNING |
-| 执行分支 | `codex/fix-manual-monitoring-run-await` |
-| 状态 | PR #31 已创建，等待人工审查 |
-| GitHub 入口 | [PR #31](https://github.com/qixin-portfolio/geo-monitor-saas/pull/31) |
-| 当前 main | `dfd9c53dc1be2e710e4b80c1472cf6b1ea7a7564` |
-| 上一轮依赖 | 从远端 `main` 新 worktree 开始；原仓库脏工作区未触碰 |
-| 本轮性质 | monitoring 手动运行可靠性小修 + OpenAI timeout/max token + 单测；不改 schema；不新增写库路径 |
+| 当前任务 | MonitoringJob queue + cron worker v1 |
+| 执行分支 | `codex/monitoring-job-queue-v1` |
+| 状态 | 本地实现完成，验证通过，等待人工审查 / PR 创建 |
+| 当前 base | `origin/main` `890eeb34680f3034f426d1160a88f02a066a9a34` |
+| 本轮性质 | PR A：基础 DB 队列 + cron worker |
 | 是否使用真实客户数据 | 否 |
 
 ## 阶段结论
 
-诊断确认：`src/app/api/monitoring/run/route.ts` 先创建 `RunBatch(PENDING)`，再 fire-and-forget 调用 `runTenantBatch`。这会在 Next / serverless 请求结束后留下 `RUNNING` batch 的风险。
+本轮只做 PR A：把 manual monitoring run 从 request 内同步执行改为 DB queue 入队，由 cron worker 后续消费。
 
-本轮改为 route 内 `await runTenantBatch`，并在 runner 抛错时把本次 batch 标为 `FAILED` 后返回安全错误。
-
-PR 审查后补丁：处理 manual route overlap race。只要 route 创建了本次 batch，即使 runner 返回 `skipped-overlap` 或抛错，本次 batch 也会进入 `FAILED` 终态，并补齐 `failureCount`。
+本轮不包含 lock / retry / ExecutionTrace / UI。后续应单独拆 PR B 和 PR C。
 
 ## 本轮目标
 
-- `POST /api/monitoring/run` 不再 fire-and-forget。
-- 保留已有 batch 创建逻辑，手动请求等待 batch 进入终态。
-- 返回 `batchId`、`status`、`queryCount`、`successCount`、`failureCount`。
-- `RunNowButton` 识别 awaited route 直接返回的终态，失败时显示失败状态。
-- OpenAI provider 使用已有 `MONITORING_TIMEOUT_MS` / `MONITORING_MAX_TOKENS` 配置。
-- 测试覆盖 route await、runner failure fallback、missing key count 断言、OpenAI 参数传递。
-- 测试覆盖 overlap skipped 不留下 `PENDING`、runner throw 不留下 `PENDING/RUNNING`、final read 失败不覆盖成功终态。
+- 新增基础 `MonitoringJob` model。
+- 新增基础 queue migration。
+- `POST /api/monitoring/run` 只创建 `RunBatch(PENDING)` 和 `MonitoringJob(PENDING)`。
+- route 立即返回 `batchId` / `jobId`。
+- 新增 cron worker `runMonitoringJobs`。
+- 新增 cron API `/api/cron/run-monitoring`。
+- 补充 queue / cron / worker 基础单测。
+
+## 明确不包含
+
+- 不包含 `lockedAt` / `lockedBy`。
+- 不包含 `retryCount` / `maxRetry` / `lastError` / `nextRetryAt`。
+- 不包含 retry / backoff。
+- 不包含 ExecutionTrace。
+- 不包含 trace API。
+- 不包含 RepairTask 详情页 Trace UI。
+- 不包含 `src/app/page.tsx`。
+- 不包含 `docs/geo-monitor/*`。
+- 不包含 `docs/hengjing-transparent-site/*`。
 
 ## 安全边界
 
-- 不修改 Prisma schema。
-- 不生成 migration。
-- 不修改 env。
-- 不新增 public API route。
-- 不新增新的写库路径。
-- 不部署 production。
-- 不连接 production DB。
-- 不使用真实客户数据。
-- 不提交 `.env.local`、seed、payload 或临时 runner。
-- 不打印 `OPENAI_API_KEY` / `DATABASE_URL` / Clerk Secret。
-- 不调用真实 OpenAI API。
-- 不做批量监测。
-- 不做 production rollout。
+- 未连接 production DB。
+- 未部署 production。
+- 未读取 / 打印 / 保存 secret。
+- 未运行 migration reset。
+- 未运行 db push。
+- 未删除当前脏工作区文件。
+- 未使用 `git add .`。
+- 未自动合并。
 
 ## 当前修改文件
 
-- `src/app/api/monitoring/run/route.ts`：manual run 改为 awaited execution，异常时 finalize batch 为 `FAILED`。
-- `src/app/api/monitoring/run/route.test.ts`：覆盖 route 等待 runner、overlap skipped、runner 抛错 fallback、final read failure。
-- `src/components/run-now-button.tsx`：支持 manual route 直接返回终态。
-- `src/lib/monitoring/openai-provider.ts`：接入 timeout / max token 配置。
-- `src/lib/monitoring/openai-provider.test.ts`：覆盖 OpenAI 参数传递。
-- `src/lib/monitoring/run-tenant-batch.integration.test.ts`：补充 missing key count 断言。
-- `AI_TASKS/current.md` / `AI_TASKS/handoff.md`：同步当前任务。
-
-## 已确认
-
-- 原仓库脏工作区未 stash / reset / clean / commit。
-- 新 worktree：`/private/tmp/geo-monitor-monitoring-run-fix`。
-- route 仍使用已有 `/api/monitoring/run`，未新增 public API route。
-- route 兜底更新使用 `{ id, tenantId }`，只处理本次 route 创建的 batch。
-- 未改 schema / migration / env。
-- 未连接 production DB。
-- 未打印或保存 secret。
-- 未调用真实 OpenAI API。
+- `prisma/schema.prisma`：新增基础 `MonitoringJob` model 与关系。
+- `prisma/migrations/20260703010000_add_monitoring_job_queue/migration.sql`：新增基础 `MonitoringJob` 表、索引和外键。
+- `src/app/api/monitoring/run/route.ts`：manual run 改为只入队，并用事务同时创建 batch/job，避免半截 PENDING batch。
+- `src/app/api/monitoring/run/route.test.ts`：覆盖 active batch 返回和入队。
+- `src/app/api/cron/run-monitoring/route.ts`：新增 cron worker API。
+- `src/app/api/cron/run-monitoring/route.test.ts`：覆盖 cron secret 鉴权和 worker 调用。
+- `src/cron/run-monitoring-jobs.ts`：新增基础 worker。
+- `src/cron/run-monitoring-jobs.test.ts`：覆盖基础 worker 成功、失败、claim lost、tenant-scoped fallback。
+- `AI_TASKS/handoff.md`：同步本轮交接状态。
 
 ## 验证记录
 
-- `pnpm test:unit`：通过，22 test files / 128 tests。
+- `pnpm prisma:generate`：通过。
+- `pnpm test:unit`：通过，24 files / 133 tests。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。
-- API smoke test：blocked，未授权真实 API 调用，未提供明确非生产 DB / OpenAI key。
 
 ## 风险与注意事项
 
-- 手动监测请求会等待监测完成；如果后续 active query 规模变大，仍应单独设计 queue / worker。
-- 本轮没有改 cron/internal monitoring route。
-- API smoke test 需要非生产 DB 和非生产 OpenAI key，且只跑 1 个 query。
+- PR A 没有 `lockedAt`/`lockedBy`，只靠 `status: PENDING -> RUNNING` 做基础 claim，完整并发锁应在 PR B 补。
+- PR A 没有 retry，runner 失败会把 job 标为 `FAILED`，retry/backoff 应在 PR B 补。
+- 尚未在明确非生产 DB 上运行 migration。
+- 尚未做 1-query API smoke test。
 
 ## 下一步建议
 
-1. 跑完 unit / typecheck / build / diff check。
-2. 创建 PR，等待人工审查。
-3. 如有明确非生产环境，再做 1-query API smoke test。
-
----
-
-## 历史记录
-
-| 时间 | 任务 | 分支 / PR | 结果 | 备注 |
-|------|------|-----------|------|------|
-| 2026-06-29 | 初始化 AI 协作工作流 | PR #5 | 已合并 | 只改协作文档 |
-| 2026-06-29 | Evidence Map MVP | PR #6 | 已合并 | 文档 + 只读页面 + 纯函数 |
-| 2026-06-30 | Evidence Chain Hardening | PR #7 | 已合并 | 测试 + AnswerSource + RepairTask draft |
-| 2026-06-30 | RepairTask 接入 Content Backlog | PR #8 | 已合并 | RepairTask draft 映射为 Content Backlog draft |
-| 2026-06-30 | Run Before/After Comparison | PR #9 | 已合并 | 同一 query 最近两次 AI 答案变化对比 |
-| 2026-06-30 | Real Run Calibration | PR #10 | 已合并 | 脱敏真实 run 样本校准 Evidence 规则 |
-| 2026-06-30 | Evidence Confidence Label | PR #11 | 已合并 | 证据链置信度标签 |
-| 2026-06-30 | Evidence Detail Drawer | PR #12 | 已合并 | 证据详情抽屉 |
-| 2026-06-30 | RepairTask Create Button Safety Design | PR #13 | 已合并 | 创建单条修复任务能力安全设计与初版 validator |
-| 2026-06-30 | RepairTask Validator Hardening | PR #14 | 已合并 | validator 白名单输出与 priority 拒绝策略 |
-| 2026-07-01 | Minimal RepairTask Server Action | PR #15 | 已合并 | server 端单条 `GeoContentTask` 写库能力，未接 UI |
-| 2026-07-01 | RepairTask Server Action QA Gate | PR #16 | 已合并 | 接 UI 前人工 QA Gate |
-| 2026-07-01 | RepairTask Server Action Manual QA Record | PR #17 | 已合并 | 记录未执行状态和 QA 前置条件 |
-| 2026-07-01 | RepairTask Server Action Manual QA Execution | PR #18 | 已合并 | 本地非生产 Manual QA 15 pass / 0 fail / 0 blocked |
-| 2026-07-01 | Evidence Detail Drawer Single RepairTask Button | PR #19 | 已合并 | 单条按钮、确认弹窗、安全提示，复用已 QA 的 server action |
-| 2026-07-01 | RepairTask Button Browser QA | PR #20 | 已合并 | 本地非生产 Button Browser QA 15 pass / 0 fail / 0 blocked |
-| 2026-07-02 | Staging RepairTask Button QA Record | PR #21 | 已合并 | Staging Button QA 19 pass / 0 fail / 0 blocked |
-| 2026-07-02 | RepairTask Production Release Gate | PR #22 | 已合并 | production 发布前 Gate，非 rollout |
-| 2026-07-02 | Production Smoke Test Readiness Check | PR #23 | 已合并 | production smoke test 前人工准备清单，非 rollout |
-| 2026-07-02 | AI_TASKS 状态同步 | PR #24 | 已合并 | RepairTask 单条按钮链路阶段完成，下一阶段为证据化修复工作台设计 |
-| 2026-07-02 | RepairTask Workbench v0.1 | PR #25 | 已合并 | 证据化修复工作台 v0.1，tenant-scoped detail query 和非生产 Browser QA 通过 |
-| 2026-07-02 | RepairTask Detail Sections v0.1.1 | PR #26 | 已合并 | 详情页 5 区块优化，非 production rollout |
-| 2026-07-02 | RepairTask Risk Review v0.1.2 | PR #27 | 已合并 | 风险审核建议卡，非 production rollout |
+1. 人工审查 PR A 文件范围，确认没有混入首页、docs、lock/retry/trace/UI。
+2. 如通过，创建 PR A。
+3. 等明确非生产 DB 后，再运行 migration deploy 和最小 smoke test。
