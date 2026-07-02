@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | Staging RepairTask Button QA：真实 Clerk / Preview 环境按钮级 QA 记录 |
 | 执行分支 | `codex/staging-repair-task-button-qa-record` |
-| 状态 | Staging QA 已完成，docs-only PR 待创建 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR #21 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #21：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/21](https://github.com/qixin-portfolio/geo-monitor-saas/pull/21) |
 | 上一轮依赖 | PR #20 已合并到远端 main，本地按钮 QA 已记录 |
 | QA Preview 分支 | `staging/repair-task-button-qa` |
 | QA Preview commit | `91c8db392239400ca0f19964bad8d4a3eb145a26` |
@@ -89,7 +89,7 @@
 
 ### 下一步建议
 
-1. 创建 docs-only PR，不自动合并。
+1. 等待 ChatGPT / 用户审查 PR #21，不自动合并。
 2. PR 审查通过后，再由人工决定是否进入小范围 staging 观察或 production 前 Human Gate。
 
 ---

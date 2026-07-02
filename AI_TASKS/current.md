@@ -12,12 +12,12 @@ Staging RepairTask Button QA：真实 Clerk / Preview 环境按钮级 QA 记录
 ## GitHub 入口
 
 - Issue：由本轮 PR 承载任务边界与交付物，当前 Issue 编号待补录。
-- PR：待创建。
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/21](https://github.com/qixin-portfolio/geo-monitor-saas/pull/21)
 - 分支：`codex/staging-repair-task-button-qa-record`
 - QA Preview 分支：`staging/repair-task-button-qa`
 - QA Preview commit：`91c8db392239400ca0f19964bad8d4a3eb145a26`
 - 基线：远端 `main`，已包含 PR #20。
-- 当前状态：Staging Button QA 已完成，docs-only PR 待创建。
+- 当前状态：PR #21 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -100,8 +100,8 @@ PR #20 已合并到 main，本地 Button Browser QA 已通过。
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [ ] PR 已创建。
-- [ ] `AI_TASKS/handoff.md` 已更新为最终 PR 状态。
+- [x] PR 已创建。
+- [x] `AI_TASKS/handoff.md` 已更新为最终 PR 状态。
 
 ## Staging 环境注意事项
 
