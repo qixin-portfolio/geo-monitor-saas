@@ -91,6 +91,7 @@ model Tenant {
   users                User[]
   queries              Query[]
   runBatches           RunBatch[]
+  monitoringJobs       MonitoringJob[]
   insightSnapshots     InsightSnapshot[]
   brandProfile         BrandProfile?
   geoContentTasks      GeoContentTask[]
@@ -153,10 +154,27 @@ model RunBatch {
   createdAt    DateTime         @default(now())
   tenant       Tenant           @relation(fields: [tenantId], references: [id])
   queryRuns    QueryRun[]
+  monitoringJobs MonitoringJob[]
   snapshot     InsightSnapshot?
 
   @@index([tenantId, createdAt])
   @@index([tenantId, status])
+}
+
+model MonitoringJob {
+  id        String   @id @default(cuid())
+  tenantId  String
+  batchId   String
+  status    String
+  payload   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id])
+  batch  RunBatch @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([batchId])
 }
 
 model QueryRun {
