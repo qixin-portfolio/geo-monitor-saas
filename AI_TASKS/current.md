@@ -7,48 +7,74 @@
 
 ## 任务名称
 
-Production Smoke Test Readiness Check：RepairTask 单条按钮 production smoke test 前准备清单
+RepairTask 单条按钮链路阶段收口：AI_TASKS 状态同步
 
 ## GitHub 入口
 
-- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/23](https://github.com/qixin-portfolio/geo-monitor-saas/pull/23)
-- 分支：`codex/production-smoke-test-readiness`
+- PR：待创建
+- 分支：`codex/sync-ai-tasks-after-pr23`
 - 基线：远端 `main`
-- 当前 main：`4cd4ec27fc51b8f47f17b22ca65f8c4ea8e9e556`
-- 当前状态：PR #23 已创建，等待人工审查与合并确认。
+- 当前 main：`6fc9cc56b3ac1654670464286cdd37c270e9f989`
+- 当前状态：RepairTask 单条按钮链路工程阶段已完成；本轮只同步 AI_TASKS 状态。
 
-## 背景
+## 阶段结论
 
-RepairTask 单条“加入修复任务池”按钮链路当前主线状态：
+RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记完成。
 
+已完成：
+
+- server action 已 QA。
+- 单条按钮已接入 Evidence Detail Drawer。
+- 本地 Browser QA：15 pass / 0 fail / 0 blocked。
+- Staging QA：19 pass / 0 fail / 0 blocked。
 - PR #21 已合并：Staging RepairTask Button QA Record。
 - PR #22 已合并：Production Release Gate。
-- 本地 Button Browser QA：15 pass / 0 fail / 0 blocked。
-- Staging Button QA：19 pass / 0 fail / 0 blocked。
-- Staging 使用 Clerk Staging 真实登录。
-- Staging 使用 Supabase `geo-monitor-staging` 和 transaction pooler。
-- Tenant A / B 隔离通过。
-- GeoContentTask QA 前 A=0 / B=0，QA 后 A=1 / B=1。
-- duplicate / 已存在场景未重复写入。
-- Content Backlog 可看到对应 tenant 任务。
+- PR #23 已合并：Production Smoke Test Readiness Check。
 - Production Release Gate 已建立。
-- 未使用真实客户数据。
+- Production Smoke Test Readiness Check 已建立。
+- 当前 open PR 只有 #3，且与 RepairTask 单条按钮链路无关。
 
-当前仍不允许直接 production rollout。本轮只准备 production smoke test 前的人工 readiness checklist。
+## 当前产品能力边界
 
-## 本次目标
+当前只完成“单条、用户确认、可追踪”的修复任务加入链路。
 
-1. 新增 `docs/qa/repair-task-production-smoke-test-readiness-check.md`。
-2. 明确这不是 production smoke test。
-3. 明确这不是 production rollout。
-4. 明确 production smoke test 前必须人工确认的环境、账号、tenant、发布窗口和回滚路径。
-5. 明确未来 production smoke test 的允许动作和禁止动作。
-6. 更新 `AI_TASKS/current.md` 和 `AI_TASKS/handoff.md`，移除 PR #22 等待审查 / 合并确认的过时状态。
-7. 创建 docs-only PR，不自动合并。
+仍禁止：
+
+- 直接 production rollout。
+- 批量创建。
+- 无人确认执行。
+- 全租户开放。
+- Lead Attribution。
+- PDF。
+- 新增写库路径。
+- 新增 public API。
+- 绕过确认弹窗。
+- 把系统推断说成第三方平台确认结论。
+
+## 下一阶段方向
+
+下一阶段不是 production rollout，也不是批量自动化。
+
+下一阶段应进入：“证据化修复工作台”设计。
+
+阶段 2 目标：
+
+- RepairTask 风险等级：绿 / 黄 / 红。
+- 修复任务类型：FAQ、案例页、资质页、服务页、Schema、对比页。
+- 每条任务绑定证据依据。
+- 修复前后复测。
+- 生成老板看得懂的 GEO 修复报告。
+
+## 本轮目标
+
+1. 同步 `AI_TASKS/current.md`。
+2. 同步 `AI_TASKS/handoff.md`。
+3. 移除“PR #23 已创建，等待人工审查与合并确认”等过时状态。
+4. 不进入下一阶段功能开发。
+5. 创建 docs-only PR，不自动合并。
 
 ## 修改范围
 
-- `docs/qa/repair-task-production-smoke-test-readiness-check.md`
 - `AI_TASKS/current.md`
 - `AI_TASKS/handoff.md`
 
@@ -72,35 +98,31 @@ RepairTask 单条“加入修复任务池”按钮链路当前主线状态：
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不进入全租户开放。
+- 不启动“证据化修复工作台”功能开发。
 
 ## 验收标准
 
-- [x] Readiness Check 文档已新增。
-- [x] 文档明确不是 production smoke test。
-- [x] 文档明确不是 production rollout。
-- [x] 文档记录本地 QA 15 pass / 0 fail / 0 blocked。
-- [x] 文档记录 Staging QA 19 pass / 0 fail / 0 blocked。
-- [x] 文档记录 Production Release Gate 已合并。
-- [x] 文档明确 production 环境人工核对清单。
-- [x] 文档明确 production smoke test 前必须准备内部测试账号 / tenant / Query / QueryRun / Analysis。
-- [x] 文档明确未来 smoke test 最多只允许内部测试 tenant 创建 1 条 `GeoContentTask`。
-- [x] 文档明确禁止批量、无人确认、全租户开放、新写库路径、公开 API 和 destructive production DB 操作。
-- [x] `AI_TASKS/handoff.md` 已更新为当前 PR 状态。
+- [x] `AI_TASKS/current.md` 记录 RepairTask 单条按钮链路阶段完成。
+- [x] `AI_TASKS/handoff.md` 记录 RepairTask 单条按钮链路阶段完成。
+- [x] 文档明确当前只完成“单条、用户确认、可追踪”的修复任务加入链路。
+- [x] 文档明确仍禁止 production rollout、批量创建、无人确认执行、全租户开放、Lead Attribution、PDF、新写库路径和 public API。
+- [x] 文档明确下一阶段方向是“证据化修复工作台”设计。
+- [x] 文档明确下一阶段不是 production rollout，也不是批量自动化。
 - [x] `pnpm test:unit` 通过，19 个文件 / 94 个测试。
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [x] PR 已创建。
+- [ ] PR 已创建。
 
 ## 是否需要 Loop
 
 - 判断：需要。
-- 依据：这是 production smoke test 前的 readiness gate，涉及认证、生产环境、写库按钮和回滚策略，必须可验证、可停止、可追踪。
+- 依据：这是 RepairTask 单条按钮链路的阶段收口状态同步，涉及 Human Gate 和下一阶段方向，必须可追踪。
 
 ## 是否需要 Human Gate
 
 - 判断：需要。
-- 原因：本轮只创建 readiness 文档 PR，不自动合并；是否执行 Production Smoke Test 必须由人工确认。
+- 原因：本轮只同步状态，不进入 production rollout，不启动下一阶段功能开发；后续方向必须由人工确认。
 
 ## 交付格式
 
