@@ -141,6 +141,31 @@ v0.1 只做提示和阻断建议展示，不自动执行任何修复动作。
 - 当前状态：沿用现有 `GeoContentTaskStatus`。
 - 生成简报 / 草稿入口：继续复用现有任务动作，不新增写库路径。
 
+### 6.1 v0.1.1 / Stage 2.1 Detail 信息分区
+
+v0.1.1 把 RepairTask Detail 从“能显示”整理成“能指导执行”的 5 个区块：
+
+1. 任务概览：展示任务标题、状态、Workbench 类型、风险等级、创建时间、关联 query / platform，以及一段老板能看懂的来源说明。
+2. 证据依据：展示 `sourceReason`、evidence gap、建议页面、关联 run / analysis 摘要、品牌提及状态、竞品摘要和 AI 回答安全摘要。
+3. 建议动作：展示 `recommendedAngle`、建议修复方向、建议产出物类型、执行提示、建议怎么修和验收标准占位。
+4. 风险审核：展示 `GREEN` / `YELLOW` / `RED` 风险等级、风险原因和处理建议。这里仅做展示，不新增审核写库、不新增“通过审核”按钮、不新增自动发布入口。
+5. 复测与报告占位：展示修复前状态、待复测状态、未来复测指标和报告摘要占位。这里不执行 retest，不生成 PDF，不触发外部调用。
+
+v0.1.1 继续保持以下边界：
+
+- 不改 Prisma schema。
+- 不新增 migration。
+- 不改 env。
+- 不新增 public API route。
+- 不新增写库路径。
+- 不改变 `createEvidenceRepairTask`。
+- 不改变 `getClerkTenant` / tenant resolution。
+- 不做 production rollout。
+- 不做批量创建。
+- 不做无人执行。
+- 不做 Lead Attribution。
+- 不做 PDF。
+
 ## 7. 证据依据展示字段
 
 v0.1 可展示的证据字段：

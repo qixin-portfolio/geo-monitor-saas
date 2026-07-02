@@ -9,107 +9,105 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | 证据化修复工作台 v0.1 |
-| 执行分支 | `codex/repair-task-workbench-v0.1` |
-| 状态 | PR #25 已创建，等待人工审查 |
-| GitHub 入口 | PR #25：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/25](https://github.com/qixin-portfolio/geo-monitor-saas/pull/25) |
-| 当前 main | `08580e4298b2bab96d91b13535967aad0ef720c3` |
-| 上一轮依赖 | PR #21 / #22 / #23 / #24 均已合并到 main |
-| 本轮性质 | 低风险展示 + ViewModel 整理；不改 schema；不新增写库路径 |
+| 当前任务 | RepairTask Detail 页面信息分区优化 v0.1.1 / Stage 2.1 |
+| 执行分支 | `codex/repair-task-detail-sections-v0.1` |
+| 状态 | 实现与本地非生产 Browser QA 已完成，PR #26 等待人工审查 |
+| GitHub 入口 | PR #26：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/26](https://github.com/qixin-portfolio/geo-monitor-saas/pull/26) |
+| 当前 main | `aede76589499b2f4e206399a045b0dee711f076e` |
+| 上一轮依赖 | PR #21 / #22 / #23 / #24 / #25 均已合并到 main |
+| 本轮性质 | 详情页 UI 信息架构 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
 | 是否使用真实客户数据 | 否 |
 
 ## 阶段结论
 
-RepairTask 单条“加入修复任务池”按钮链路工程阶段已完成。
+阶段 2「证据化修复工作台 v0.1」已完成，RepairTask 工作台已能展示 type / risk / evidence basis。
 
-当前进入阶段 2：“证据化修复工作台”设计与 v0.1 实现。
+本轮进入 Stage 2.1，只优化 RepairTask Detail 页面信息分区，让详情页从“能显示”升级为“能指导执行”。
 
-本轮只做最小可用展示：
+## 本轮目标
 
-- RepairTask 类型。
-- 风险等级。
-- 关联 query。
-- 关联 evidence / evidence gap。
-- 为什么建议修。
-- 建议怎么修。
-- 当前状态。
-- 后续 Retest / Report 占位。
+RepairTask Detail 页面拆成 5 个只读区块：
 
-## 审计结论
+1. 任务概览：标题、状态、任务类型、风险等级、创建时间、关联 query / platform、一句话总结。
+2. 证据依据：`sourceReason`、evidence basis summary、关联 run / analysis 摘要、AI 回答安全摘要、品牌 / 竞品提及状态。
+3. 建议动作：`recommendedAngle`、建议修复方向、建议产出物类型、执行提示、验收标准占位。
+4. 风险审核：`GREEN` / `YELLOW` / `RED`、风险原因、风险处理建议。
+5. 复测与报告占位：修复前状态、待复测状态、未来复测指标、报告摘要占位。
 
-- 现有 `GeoContentTask` 字段足够支撑 v0.1，只需派生 ViewModel。
-- 不需要 Prisma schema change。
-- 不需要 migration。
-- 不需要新增 public API route。
-- 不需要新增 server action。
-- 不需要改变 `createEvidenceRepairTask`。
-- tenant isolation 继续使用现有 `getOrCreateTenant()` 和 `tenantId` 过滤。
-
-## 当前产品能力边界
-
-当前只完成“单条、用户确认、可追踪”的修复任务加入和展示链路。
-
-仍禁止：
-
-- 直接 production rollout。
-- 批量创建。
-- 无人确认执行。
-- 全租户开放。
-- Lead Attribution。
-- PDF。
-- 新增写库路径。
-- 新增 public API。
-- 跳过 Human Gate。
-
-## 本轮交接
-
-### 修改文件
-
-- `docs/product/repair-task-workbench-v0.1.md`：新增阶段 2 v0.1 产品设计与安全边界。
-- `src/lib/content-backlog/repair-task-workbench.ts`：新增任务类型、风险等级、风险原因和证据摘要 ViewModel 纯函数。
-- `src/lib/content-backlog/repair-task-workbench.test.ts`：新增纯函数单元测试。
-- `src/app/dashboard/content-backlog/page.tsx`：列表页升级为证据化修复工作台入口，展示类型和风险等级。
-- `src/app/dashboard/content-backlog/[id]/page.tsx`：详情页新增工作台总览、关联 evidence、建议怎么修和 Retest 占位。
-- `AI_TASKS/current.md`：同步本轮任务状态。
-- `AI_TASKS/handoff.md`：同步本轮交接状态。
-
-### 安全边界
+## 安全边界
 
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不修改 env。
 - 不新增 public API route。
 - 不新增新的写库路径。
+- 不改变 `createEvidenceRepairTask`。
+- 不改变 `getClerkTenant` / tenant resolution。
 - 不部署 production。
-- 不运行 production DB。
-- 不点击生产按钮。
+- 不连接 production DB。
 - 不使用真实客户数据。
-- 不提交 `.env.local`、seed、payload 或临时脚本。
+- 不提交 `.env.local`、seed、payload 或临时 runner。
 - 不做批量创建。
 - 不做无人确认执行。
 - 不做 Lead Attribution。
 - 不做 PDF。
+- 不新增自动发布能力。
+- 不跳过 Human Gate。
 
-### 验证记录
+## 当前修改文件
 
-- `pnpm test:unit`：通过，20 个文件 / 100 个测试。
+- `docs/product/repair-task-workbench-v0.1.md`：追加 v0.1.1 / Stage 2.1 的 5 区块和安全边界说明。
+- `src/lib/content-backlog/repair-task-workbench.ts`：新增 / 优化 RepairTask Detail ViewModel 纯函数。
+- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充 detail view model、fallback、风险处理和异常 JSON 场景单测。
+- `src/app/dashboard/content-backlog/[id]/page.tsx`：详情页改为 5 个只读信息区块，保持 tenant-scoped 查询。
+- `AI_TASKS/current.md`：同步当前任务状态。
+- `AI_TASKS/handoff.md`：同步当前交接状态。
+
+## 已确认
+
+- `GeoContentTask` 详情查询仍使用 `findFirst({ where: { id, tenantId: tenant.id } })`。
+- `queryRun` 查询仍使用 `findFirst`，并通过 `query.tenantId = tenant.id` 限制当前 tenant。
+- `queryRunAnalysis` 查询仍使用 `findFirst`，并通过 `queryRun.query.tenantId = tenant.id` 限制当前 tenant。
+- 页面没有新增 public API route。
+- 页面没有新增写库按钮。
+- 页面没有新增批量入口、无人执行入口、Lead Attribution 或 PDF。
+- ViewModel 纯函数不访问 DB / env / network / session / file IO。
+
+## 验证记录
+
+- `pnpm test:unit`：通过，20 个文件 / 105 个测试。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。
-- Browser QA：blocked。干净克隆只有 `.env.example`，无本地非生产 `DATABASE_URL`；未复制、保存或打印任何 secret，未连接 production/staging DB。
+- Browser QA：通过，Local 非生产环境。
 
-### 风险与注意事项
+## Browser QA 记录
 
-- 风险等级为启发式派生，不是合规结论，也不是第三方平台官方归因。
-- v0.1 的 Retest / Report 仅为占位，不自动复测，不生成报告。
-- 若后续需要保存风险等级、复测结果或审计记录，应单独提出 schema change proposal。
+- QA 环境：Local dev；使用本机已有 `.env.local` 注入进程，脱敏检查为 local 类型。
+- 是否连接 production：否。
+- 是否打印或保存 secret：否。
+- 是否点击写库按钮：否。
+- `/dashboard/content-backlog`：正常加载；可看到当前 tenant 的 RepairTask；列表展示任务类型、风险等级、状态。
+- `/dashboard/content-backlog/[id]`：正常加载；任务概览、证据依据、建议动作、风险审核、复测与报告占位 5 个区块均可见。
+- type / risk / evidence / recommended action：展示清楚。
+- JSON / evidence：未作为 HTML 渲染，未新增 `dangerouslySetInnerHTML`。
+- 不存在 task id：返回 404 / safe fallback。
+- 跨 tenant URL 测试：本地 dev fallback 只有一个可用 tenant session，本轮未执行；tenant-scoped 查询保持 `id + tenantId` 和 relation tenant filter。
+- GeoContentTask 数量：QA 前 1，QA 后 1，未新增任务。
 
-### 下一步建议
+## 风险与注意事项
 
-1. 完成验证命令和本地 Browser QA。
-2. 创建 PR，等待人工审查。
-3. 不直接 production rollout。
-4. 不进入批量创建或无人确认执行。
+- 风险等级仍是启发式派生，只作为人工执行提示，不是合规结论，也不是第三方平台官方归因。
+- Retest / Report 只是占位，不会自动复测，不会生成 PDF。
+- 详情页保留既有简报 / 草稿入口，但本轮没有新增写库路径，也不会自动触发。
+- 本轮不是 production rollout，不允许直接进入 production 发布。
+
+## 下一步建议
+
+1. 完成验证命令和非生产 Browser QA。
+2. 审查 PR #26，等待人工合并决策。
+3. 人工审查重点看 tenant-scoped detail query、5 区块信息是否清楚、是否无新增写库路径。
+4. 不自动合并，不进入 production rollout。
 
 ---
 
@@ -137,3 +135,4 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段已完成。
 | 2026-07-02 | RepairTask Production Release Gate | PR #22 | 已合并 | production 发布前 Gate，非 rollout |
 | 2026-07-02 | Production Smoke Test Readiness Check | PR #23 | 已合并 | production smoke test 前人工准备清单，非 rollout |
 | 2026-07-02 | AI_TASKS 状态同步 | PR #24 | 已合并 | RepairTask 单条按钮链路阶段完成，下一阶段为证据化修复工作台设计 |
+| 2026-07-02 | RepairTask Workbench v0.1 | PR #25 | 已合并 | 证据化修复工作台 v0.1，tenant-scoped detail query 和非生产 Browser QA 通过 |
