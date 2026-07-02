@@ -511,4 +511,25 @@ describe("repair task workbench view model", () => {
     expect(steps.find((step) => step.status === "RETEST_PENDING")?.state).toBe("pending")
     expect(task).toEqual(before)
   })
+
+  it("does not mark happy path steps completed for blocked or rejected tasks", () => {
+    const unsafeTasks = [
+      { status: "BLOCKED" },
+      { status: "REJECTED" },
+      { status: "SKIPPED" },
+      { status: "SOMETHING_NEW" },
+      {},
+    ]
+
+    for (const task of unsafeTasks) {
+      const before = structuredClone(task)
+      const steps = getRepairTaskLifecycleSteps(task)
+      const currentStep = steps.find((step) => step.state === "blocked")
+
+      expect(currentStep?.status).toBe(normalizeRepairTaskStatus(task))
+      expect(steps.filter((step) => step.state === "completed")).toEqual([])
+      expect(steps.filter((step) => step.state !== "pending" && step.state !== "blocked")).toEqual([])
+      expect(task).toEqual(before)
+    }
+  })
 })

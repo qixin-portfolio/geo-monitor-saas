@@ -11,7 +11,7 @@
 |------|------|
 | 当前任务 | RepairTask 状态流与人工推进 v0.1.4 / Stage 2.4 |
 | 执行分支 | `codex/repair-task-status-flow-v0.1` |
-| 状态 | PR #29 已 rebase 到最新 main，等待重新审查；Browser QA blocked |
+| 状态 | PR #29 已 rebase 到最新 main，lifecycle steps 补修已保留，等待重新审查；Browser QA blocked |
 | GitHub 入口 | [PR #29](https://github.com/qixin-portfolio/geo-monitor-saas/pull/29) |
 | 当前 main | `890eeb34680f3034f426d1160a88f02a066a9a34` |
 | 上一轮依赖 | PR #25 / #26 / #27 / #28 / #30 / #31 均已合并到 main |
@@ -74,7 +74,7 @@ PR 审查后已补修：`BLOCKED` / `REJECTED` / `SKIPPED` / unknown / missing s
 
 - `docs/product/repair-task-workbench-v0.1.md`：追加 Stage 2.4 状态流与人工推进说明。
 - `src/lib/content-backlog/repair-task-workbench.ts`：新增 workflow normalize / next action / Human Gate / lifecycle 纯函数。
-- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充状态流和 fallback 单测。
+- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充状态流、fallback、BLOCKED / REJECTED lifecycle 单测。
 - `src/app/dashboard/content-backlog/[id]/page.tsx`：新增只读“状态流与下一步动作”模块。
 - `AI_TASKS/current.md`：同步当前任务状态和 rebase 结果。
 - `AI_TASKS/handoff.md`：同步当前交接状态和 rebase 结果。
@@ -92,6 +92,7 @@ PR 审查后已补修：`BLOCKED` / `REJECTED` / `SKIPPED` / unknown / missing s
 - 页面没有新增批量入口、无人执行入口、Lead Attribution 或 PDF。
 - ViewModel 纯函数不访问 DB / env / network / session / file IO。
 - 本次 rebase 只解决 `AI_TASKS/current.md` 和 `AI_TASKS/handoff.md` 冲突。
+- `BLOCKED` / `REJECTED` 当前状态不会把前序 normal steps 标为 completed。
 
 ## 验证记录
 

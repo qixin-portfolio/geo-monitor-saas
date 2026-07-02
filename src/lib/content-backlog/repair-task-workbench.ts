@@ -914,12 +914,13 @@ export function getRepairTaskHumanGate(task: RepairTaskWorkbenchInput) {
 export function getRepairTaskLifecycleSteps(task: RepairTaskWorkbenchInput): RepairTaskLifecycleStep[] {
   const currentStatus = normalizeRepairTaskStatus(task)
   const currentIndex = WORKFLOW_STATUS_ORDER.indexOf(currentStatus)
+  const isUnsafeTerminalStatus = currentStatus === "BLOCKED" || currentStatus === "REJECTED"
 
   return WORKFLOW_STATUS_ORDER.map((status, index) => ({
     status,
     label: getRepairTaskStatusLabel(status),
     description: getRepairTaskStatusDescription(status),
-    state: status === "BLOCKED" || status === "REJECTED"
+    state: isUnsafeTerminalStatus
       ? status === currentStatus ? "blocked" : "pending"
       : index < currentIndex
         ? "completed"
