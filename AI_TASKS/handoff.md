@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | RepairTask Detail 页面信息分区优化 v0.1.1 / Stage 2.1 |
 | 执行分支 | `codex/repair-task-detail-sections-v0.1` |
-| 状态 | 实现与本地非生产 Browser QA 已完成，PR 待创建 |
-| GitHub 入口 | 待创建 |
+| 状态 | 实现与本地非生产 Browser QA 已完成，PR #26 等待人工审查 |
+| GitHub 入口 | PR #26：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/26](https://github.com/qixin-portfolio/geo-monitor-saas/pull/26) |
 | 当前 main | `aede76589499b2f4e206399a045b0dee711f076e` |
 | 上一轮依赖 | PR #21 / #22 / #23 / #24 / #25 均已合并到 main |
 | 本轮性质 | 详情页 UI 信息架构 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
@@ -105,7 +105,7 @@ RepairTask Detail 页面拆成 5 个只读区块：
 ## 下一步建议
 
 1. 完成验证命令和非生产 Browser QA。
-2. 创建 PR，等待人工审查。
+2. 审查 PR #26，等待人工合并决策。
 3. 人工审查重点看 tenant-scoped detail query、5 区块信息是否清楚、是否无新增写库路径。
 4. 不自动合并，不进入 production rollout。
 

@@ -12,7 +12,7 @@ RepairTask Detail 页面信息分区优化 v0.1.1 / Stage 2.1
 ## GitHub 入口
 
 - 分支：`codex/repair-task-detail-sections-v0.1`
-- PR：待创建
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/26](https://github.com/qixin-portfolio/geo-monitor-saas/pull/26)
 - 基线：远端 `main`
 - 当前 main：`aede76589499b2f4e206399a045b0dee711f076e`
 - 依赖状态：PR #21 / #22 / #23 / #24 / #25 均已合并。
@@ -62,7 +62,7 @@ RepairTask Detail 页面信息分区优化 v0.1.1 / Stage 2.1
 - [x] 运行 `pnpm build`：通过。
 - [x] 运行 `git diff --check`：通过。
 - [x] 完成本地非生产 Browser QA：Local env，非 production，GeoContentTask 数量 1 -> 1。
-- [ ] 创建 PR，等待人工审查。
+- [x] 创建 PR #26，等待人工审查。
 
 ## Browser QA 记录
 
