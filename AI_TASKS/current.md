@@ -7,131 +7,135 @@
 
 ## 任务名称
 
-RepairTask Retest Before / After 复测占位升级 v0.1.3 / Stage 2.3
+新增 GEOFlow-inspired Content Execution Layer 产品设计文档
 
 ## GitHub 入口
 
-- 分支：`codex/repair-task-retest-plan-v0.1`
-- PR：[#28](https://github.com/qixin-portfolio/geo-monitor-saas/pull/28)
+- 分支：`codex/geoflow-inspired-execution-layer-v0.1`
+- PR：[#30](https://github.com/qixin-portfolio/geo-monitor-saas/pull/30)
 - 基线：远端 `main`
-- 当前 main：`9de8ccb6e33bea7fe4b4406176819ca49da7a11b`
-- 依赖状态：PR #25 / #26 / #27 均已合并。
+- 当前 main：`dfd9c53dc1be2e710e4b80c1472cf6b1ea7a7564`
+- 新 worktree：`/private/tmp/geo-monitor-geoflow-execution-layer`
 
 ## 背景
 
-阶段 2「证据化修复工作台」持续推进：
+GEO Monitor 当前主线已经具备 RepairTask 单条加入修复任务池、证据化修复工作台、Retest Plan、RepairTask 详情页、tenant-scoped detail query 等能力。
 
-- PR #25 已合并：证据化修复工作台 v0.1。
-- PR #26 已合并：RepairTask Detail 页面 5 区块优化。
-- PR #27 已合并：Risk Review 审核状态设计。
-- 当前 RepairTask Detail 已展示任务概览、证据依据、建议动作、风险审核、复测与报告占位。
-- 当前仍不是 production rollout。
-- 当前仍不做批量、无人执行、Lead Attribution、PDF。
+参考对象为开源项目 GEOFlow。产品判断：
+
+- GEOFlow 更像“GEO 内容生产 + 多站点分发系统”。
+- GEO Monitor 更像“AI 搜索可见度监测 + 证据化修复 + 复测报告系统”。
+
+本轮只做产品路线文档，明确 GEO Monitor 可以借鉴什么、暂时不做什么。
 
 ## 本轮目标
 
-升级 RepairTask Detail 页的“复测与报告占位”区块，让每条修复任务明确展示：
+新增：
 
-1. 修复前状态是什么。
-2. 这条任务希望改善什么。
-3. 修复后应该观察哪些指标。
-4. 什么情况算改善。
-5. 什么情况算暂无变化。
-6. 什么情况算风险未通过。
-7. 未来老板报告应该怎么解释结果。
+- `docs/product/geoflow-inspired-content-execution-layer-v0.1.md`
+
+文档需要明确：
+
+1. GEO Monitor 与 GEOFlow 的产品边界。
+2. Evidence Asset Library。
+3. GEO Infrastructure Checklist。
+4. Content Execution Layer。
+5. 发布渠道适配器。
+6. Agent 安全边界。
+7. Job / Revision / Event Log。
+8. 老板报告与健康度。
+9. 暂时不要做的事情。
+10. 推荐路线图。
+11. 对当前 Stage 2.4 的影响。
 
 ## 修改范围
 
-- `src/app/dashboard/content-backlog/[id]/page.tsx`
-- `src/lib/content-backlog/repair-task-workbench.ts`
-- `src/lib/content-backlog/repair-task-workbench.test.ts`
-- `docs/product/repair-task-workbench-v0.1.md`
+允许修改：
+
+- `docs/product/geoflow-inspired-content-execution-layer-v0.1.md`
 - `AI_TASKS/current.md`
 - `AI_TASKS/handoff.md`
 
-## 实现计划
+## 禁止事项
 
-- [x] 新增 / 优化 Retest Plan 纯函数。
-- [x] 复测与报告占位升级为复测与验收计划。
-- [x] 展示修复前状态、复测目标、待观察指标、改善 / 暂无变化 / 风险未通过判定、老板报告摘要占位。
-- [x] 补充 FAQ / CASE_STUDY / QUALIFICATION / SERVICE_PAGE / SCHEMA / COMPARISON / SOURCE_BUILDING / CONTENT_UPDATE / fallback 单测。
-- [x] 更新产品文档 Stage 2.3。
-- [x] 更新 AI_TASKS 状态。
+- 不修改 `src`。
+- 不修改 `prisma/schema.prisma`。
+- 不新增 migration。
+- 不修改 env。
+- 不新增 public API route。
+- 不新增 server action。
+- 不新增写库路径。
+- 不引入 GEOFlow 代码。
+- 不添加 submodule。
+- 不添加 package dependency。
+- 不接 WordPress。
+- 不接 HTTP API 发布。
+- 不做自动发布。
+- 不做多站点分发。
+- 不做外部 AI 调用。
+- 不做真实复测。
+- 不生成 PDF。
+- 不做 production rollout。
+- 不连接 production DB。
+- 不提交 `.env.local`、seed、payload 或临时 runner。
+- 不使用真实客户数据。
+- 不打印 secret。
+
+## 当前状态
+
+- [x] 原脏工作区已确认，未处理、未 stash、未 reset、未 clean。
+- [x] 已创建独立 worktree：`/private/tmp/geo-monitor-geoflow-execution-layer`。
+- [x] 本地 `main` pull 因与 `origin/main` 分叉失败；已改为从最新 `origin/main` 创建任务分支。
+- [x] 已阅读 GEOFlow README、分发 Agent 示例、统一分发方案和相关 grep 线索。
+- [x] 已新增产品路线文档。
+- [x] 已更新 AI_TASKS 状态。
 - [x] 运行 `pnpm test:unit`。
 - [x] 运行 `pnpm typecheck`。
 - [x] 运行 `pnpm build`。
 - [x] 运行 `git diff --check`。
-- [x] 完成本地非生产 Browser QA。
-- [x] 创建 PR，等待人工审查。
+- [x] 提交 commit。
+- [x] 创建 PR。
 
-## 禁止事项
+## 验收标准
 
-- 不改 schema。
-- 不新增 migration。
-- 不改 env。
-- 不新增 public API route。
-- 不新增新的写库路径。
-- 不新增 server action。
-- 不改 `createEvidenceRepairTask`。
-- 不改 `getClerkTenant` / tenant resolution。
-- 不做 production deploy。
-- 不连接 production DB。
-- 不使用真实客户数据。
-- 不做批量创建。
-- 不做无人确认执行。
-- 不做 Lead Attribution。
-- 不做 PDF。
-- 不新增自动发布能力。
-- 不新增真实 retest 执行能力。
-- 不调用 OpenAI / Gemini / DeepSeek / 豆包 / 千问等外部 AI。
-- 不新增 cron / queue / background job。
-- 不跳过 Human Gate。
-- 不提交 `.env.local`、seed、payload 或临时 runner。
-- 不打印 `DATABASE_URL` / Clerk Secret / token / cookie / password。
+- 文档结构完整覆盖 12 个章节。
+- 本轮只修改允许的 3 个文件。
+- 不修改 `src` / schema / migration / env。
+- 不新增 public API route / server action / 写库路径。
+- 不引入 GEOFlow 代码、submodule 或 dependency。
+- 不连接 production，不调用外部 AI，不做发布渠道接入。
+- `pnpm test:unit`、`pnpm typecheck`、`pnpm build`、`git diff --check` 有明确结果。
+- 创建 PR，不自动合并。
 
-## 当前产品能力边界
+## 验证结果
 
-本轮只做 Retest Before / After 展示结构和规则占位：
-
-- Retest Plan 只是验收计划，不是复测结果。
-- 不新增“开始复测”按钮。
-- 不新增“生成报告 / PDF”按钮。
-- 不新增复测写库或报告写库。
-- 不调用任何外部 AI / network。
-- 页面加载不会自动创建任务。
-- production rollout、批量创建、无人执行、全租户开放仍禁止。
+- `pnpm install --frozen-lockfile`：通过；仅安装本地依赖，未修改依赖清单。
+- `pnpm test:unit`：通过，20 个测试文件、123 个测试。
+- `pnpm typecheck`：通过。
+- `pnpm build`：通过。
+- `git diff --check`：通过。
 
 ## 是否需要 Human Gate
 
 - 判断：需要。
-- 原因：本轮修改 RepairTask 复测验收文案和展示结构，PR 合并前需要人工审查；不允许自动合并。
-
-## 验证结果
-
-- `pnpm test:unit`：通过。
-- `pnpm typecheck`：通过。
-- `pnpm build`：通过。
-- `git diff --check`：通过。
-- Browser QA：Local 非生产通过。
-  - `/dashboard/content-backlog` 正常加载，列表展示当前 tenant 的 RepairTask。
-  - RepairTask 详情页正常加载，“复测与验收计划”展示修复前状态、复测目标、待观察指标、改善判定、暂无变化判定、风险未通过判定、老板报告摘要占位。
-  - 页面未新增“开始复测”按钮。
-  - 页面未新增“生成报告 / PDF”按钮。
-  - 页面未触发外部 AI 调用。
-  - 不存在 task id 返回 404 / safe fallback。
-  - GeoContentTask 计数保持 `1 -> 1`，QA 过程中未新增写库。
-  - 跨 tenant URL 测试未执行：本地 dev fallback 只有一个 tenant session；代码层仍保持 tenant-scoped detail query。
+- 原因：本轮是产品路线文档，会影响后续 Evidence Asset Library、GEO Infrastructure Checklist、Content Execution Layer 的设计方向；PR 合并前需要人工审查。
 
 ## 交付格式
 
-1. 当前 main commit
-2. PR 链接
-3. 当前 head commit
-4. 修改文件
-5. 自测命令与结果
-6. Browser QA 结果
-7. Retest Plan / 修复前状态 / 复测目标 / 指标 / 判定规则 / 老板报告占位是否完成
-8. 是否保持 tenant-scoped detail query
-9. 是否有 schema / migration / env / 写库路径 / 外部 AI 调用 / PDF 改动
-10. 风险
-11. 下一步建议
+1. 新 worktree 路径
+2. 当前 main commit
+3. PR 链接
+4. head commit
+5. 修改文件列表
+6. 是否 docs-only
+7. 是否修改 src
+8. 是否修改 schema / migration / env
+9. 是否新增 public API route
+10. 是否新增写库路径
+11. 是否引入 GEOFlow 代码或依赖
+12. 是否连接 production
+13. `pnpm test:unit` 结果
+14. `pnpm typecheck` 结果
+15. `pnpm build` 结果
+16. `git diff --check` 结果
+17. 是否可以进入人工审查
