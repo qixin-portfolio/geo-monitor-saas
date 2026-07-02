@@ -11,8 +11,9 @@
 |------|------|
 | 当前任务 | MonitoringJob queue + cron worker v1 |
 | 执行分支 | `codex/monitoring-job-queue-v1` |
-| 状态 | 本地实现完成，验证通过，等待人工审查 / PR 创建 |
+| 状态 | PR 已创建，等待人工审查 |
 | 当前 base | `origin/main` `890eeb34680f3034f426d1160a88f02a066a9a34` |
+| PR | [#32](https://github.com/qixin-portfolio/geo-monitor-saas/pull/32) |
 | 本轮性质 | PR A：基础 DB 队列 + cron worker |
 | 是否使用真实客户数据 | 否 |
 
