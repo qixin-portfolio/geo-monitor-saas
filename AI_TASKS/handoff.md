@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | Production Smoke Test Readiness Check：RepairTask 单条按钮 production smoke test 前准备清单 |
 | 执行分支 | `codex/production-smoke-test-readiness` |
-| 状态 | docs-only readiness 文档待 PR 审查 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR #23 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #23：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/23](https://github.com/qixin-portfolio/geo-monitor-saas/pull/23) |
 | 当前 main | `4cd4ec27fc51b8f47f17b22ca65f8c4ea8e9e556` |
 | 上一轮依赖 | PR #21 / PR #22 均已合并到 main |
 | 本轮性质 | docs-only，不修改功能代码 |
@@ -76,10 +76,9 @@
 
 ### 下一步建议
 
-1. 创建 docs-only PR。
-2. 等待 ChatGPT / 用户审查 readiness 文档。
-3. PR 审查通过并合并后，再由人工决定是否进入 Production Smoke Test。
-4. 不要直接 production rollout。
+1. 等待 ChatGPT / 用户审查 PR #23。
+2. PR 审查通过并合并后，再由人工决定是否进入 Production Smoke Test。
+3. 不要直接 production rollout。
 
 ---
 

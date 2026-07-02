@@ -11,11 +11,11 @@ Production Smoke Test Readiness Check：RepairTask 单条按钮 production smoke
 
 ## GitHub 入口
 
-- PR：待创建
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/23](https://github.com/qixin-portfolio/geo-monitor-saas/pull/23)
 - 分支：`codex/production-smoke-test-readiness`
 - 基线：远端 `main`
 - 当前 main：`4cd4ec27fc51b8f47f17b22ca65f8c4ea8e9e556`
-- 当前状态：正在创建 docs-only readiness 文档，等待 PR 和人工审查。
+- 当前状态：PR #23 已创建，等待人工审查与合并确认。
 
 ## 背景
 
@@ -90,7 +90,7 @@ RepairTask 单条“加入修复任务池”按钮链路当前主线状态：
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [ ] PR 已创建。
+- [x] PR 已创建。
 
 ## 是否需要 Loop
 
