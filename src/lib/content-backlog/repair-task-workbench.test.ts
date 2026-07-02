@@ -24,6 +24,13 @@ import {
   getRiskProhibitedActions,
   getHumanGateNotice,
   getRiskReviewSummary,
+  getRepairTaskHumanGate,
+  getRepairTaskLifecycleSteps,
+  getRepairTaskNextAction,
+  getRepairTaskStatusDescription,
+  getRepairTaskStatusLabel,
+  getRepairTaskWorkflowViewModel,
+  normalizeRepairTaskStatus,
 } from "./repair-task-workbench"
 
 describe("repair task workbench view model", () => {
@@ -433,6 +440,75 @@ describe("repair task workbench view model", () => {
 
     buildRepairTaskRetestPlan(task, null, null)
 
+    expect(task).toEqual(before)
+  })
+
+  it("normalizes existing GeoContentTask statuses into workflow statuses", () => {
+    expect(normalizeRepairTaskStatus({ status: "TODO" })).toBe("READY")
+    expect(normalizeRepairTaskStatus({ status: "TODO", sourceReason: "伪造评价。" })).toBe("NEEDS_REVIEW")
+    expect(normalizeRepairTaskStatus({ status: "BRIEF_READY" })).toBe("IN_PROGRESS")
+    expect(normalizeRepairTaskStatus({ status: "DRAFT_READY" })).toBe("NEEDS_REVIEW")
+    expect(normalizeRepairTaskStatus({ status: "REVIEW_NEEDED" })).toBe("NEEDS_REVIEW")
+    expect(normalizeRepairTaskStatus({ status: "APPROVED" })).toBe("RETEST_PENDING")
+    expect(normalizeRepairTaskStatus({ status: "EXPORTED" })).toBe("PUBLISHED")
+    expect(normalizeRepairTaskStatus({ status: "SKIPPED" })).toBe("REJECTED")
+  })
+
+  it("falls back safely for unknown and missing workflow statuses", () => {
+    expect(normalizeRepairTaskStatus({ status: "SOMETHING_NEW" })).toBe("BLOCKED")
+    expect(normalizeRepairTaskStatus({})).toBe("BLOCKED")
+    expect(getRepairTaskStatusLabel("SOMETHING_NEW")).toBe("阻塞")
+    expect(getRepairTaskStatusDescription(null)).toContain("无法安全推进")
+  })
+
+  it("returns workflow next actions and human gate decisions", () => {
+    expect(getRepairTaskNextAction({ status: "TODO" })).toContain("进入内容制作")
+    expect(getRepairTaskNextAction({ status: "REVIEW_NEEDED" })).toContain("负责人确认")
+    expect(getRepairTaskHumanGate({ status: "REVIEW_NEEDED" })).toBe(true)
+    expect(getRepairTaskHumanGate({ status: "TODO", type: "FAQ" })).toBe(false)
+  })
+
+  it("keeps retest and report hints read-only by status", () => {
+    expect(getRepairTaskWorkflowViewModel({ status: "APPROVED" })).toMatchObject({
+      status: "RETEST_PENDING",
+      canRetest: true,
+      canReport: false,
+    })
+    expect(getRepairTaskWorkflowViewModel({ status: "IMPROVED" })).toMatchObject({
+      status: "IMPROVED",
+      canRetest: false,
+      canReport: true,
+    })
+    expect(getRepairTaskWorkflowViewModel({ status: "NO_CHANGE" })).toMatchObject({
+      status: "NO_CHANGE",
+      canRetest: false,
+      canReport: true,
+    })
+  })
+
+  it("does not describe red risk tasks as automatically executable", () => {
+    const workflow = getRepairTaskWorkflowViewModel({
+      status: "TODO",
+      sourceReason: "攻击竞品和伪造评价。",
+    })
+
+    expect(workflow.status).toBe("NEEDS_REVIEW")
+    expect(workflow.nextAction).toContain("不要直接进入内容制作")
+    expect(workflow.warning).toContain("不能直接执行")
+    expect(workflow.safetyNotice).toContain("不会自动执行")
+  })
+
+  it("builds lifecycle steps without mutating input", () => {
+    const task = {
+      status: "DRAFT_READY",
+      type: "COMPARISON",
+      evidenceJson: { repairTask: { taskType: "competitor_counter" } },
+    }
+    const before = structuredClone(task)
+    const steps = getRepairTaskLifecycleSteps(task)
+
+    expect(steps.find((step) => step.status === "NEEDS_REVIEW")?.state).toBe("current")
+    expect(steps.find((step) => step.status === "RETEST_PENDING")?.state).toBe("pending")
     expect(task).toEqual(before)
   })
 })
