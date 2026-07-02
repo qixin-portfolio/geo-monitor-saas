@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildRepairTaskDetailViewModel,
   buildRepairTaskWorkbenchViewModel,
   deriveRepairTaskRiskLevel,
   deriveRepairTaskType,
+  getRepairTaskAcceptanceCriteria,
   getRepairTaskEvidenceSummary,
+  getRepairTaskExecutionHint,
+  getRepairTaskRiskHandling,
   getRepairTaskRiskReason,
 } from "./repair-task-workbench"
 
@@ -104,5 +108,104 @@ describe("repair task workbench view model", () => {
     expect(viewModel.whyFix).toContain("品牌证据")
     expect(viewModel.howToFix).toEqual(["真实案例", "服务说明", "FAQ"])
     expect(viewModel.retestPlaceholder).toContain("不自动执行复测")
+  })
+
+  it("builds a full detail view model from task, query run, and analysis", () => {
+    const detail = buildRepairTaskDetailViewModel({
+      task: {
+        title: "补齐竞品对比与本地推荐证据",
+        type: "COMPARISON",
+        sourceQuery: "品牌怎么被 AI 推荐",
+        sourceReason: "AI 推荐了竞品但没有充分推荐品牌。",
+        recommendedAngle: "补充事实型对比页。",
+        evidenceJson: {
+          relatedQuery: "品牌怎么被 AI 推荐",
+          trigger: "competitor_evidence_advantage",
+          suggestedPage: "对比页",
+          repairTask: { taskType: "competitor_counter" },
+        },
+      },
+      queryRun: {
+        provider: "test-provider",
+        model: "test-model",
+        query: { text: "品牌怎么被 AI 推荐", platform: "manual" },
+      },
+      analysis: {
+        mentionStatus: "MENTIONED",
+        visibilityScore: 42,
+        summary: "AI 提到了品牌，但推荐理由不足。",
+        competitorsJson: [{ name: "竞品 A" }],
+      },
+    })
+
+    expect(detail.type).toBe("COMPARISON")
+    expect(detail.riskLevel).toBe("YELLOW")
+    expect(detail.oneLineSummary).toContain("品牌怎么被 AI 推荐")
+    expect(detail.platformLabel).toBe("manual")
+    expect(detail.evidenceBasisSummary).toContain("竞品")
+    expect(detail.answerSummary).toContain("推荐理由不足")
+    expect(detail.brandMentionSummary).toContain("已提及")
+    expect(detail.competitorSummary).toContain("竞品 A")
+    expect(detail.recommendedAction.outputType).toBe("对比页")
+    expect(detail.riskReview.handling).toContain("人工审核")
+    expect(detail.retestPlan.metrics).toContain("AI 是否推荐品牌")
+  })
+
+  it("falls back when sourceReason, recommendedAngle, queryRun, and analysis are missing", () => {
+    const detail = buildRepairTaskDetailViewModel({
+      task: {
+        title: "缺字段任务",
+        type: "UNKNOWN_TYPE",
+        evidenceJson: null,
+        briefJson: null,
+      },
+    })
+
+    expect(detail.type).toBe("CONTENT_UPDATE")
+    expect(detail.queryText).toBe("暂未关联 query")
+    expect(detail.platformLabel).toBe("暂未记录平台")
+    expect(detail.evidenceBasisSummary).toContain("暂未关联 query")
+    expect(detail.recommendedAction.angle).toContain("暂未关联 query")
+    expect(detail.answerSummary).toContain("还没有可读")
+    expect(detail.retestPlan.beforeState).toContain("暂未识别")
+  })
+
+  it("returns stable risk handling for green, yellow, and red tasks", () => {
+    expect(getRepairTaskRiskHandling({ type: "FAQ" })).toContain("正常内容制作")
+    expect(getRepairTaskRiskHandling({ type: "COMPARISON" })).toContain("人工审核")
+    expect(
+      getRepairTaskRiskHandling({
+        type: "ARTICLE",
+        sourceReason: "伪造评价属于红线。",
+      })
+    ).toContain("禁止直接执行")
+  })
+
+  it("returns execution hints and acceptance criteria for known and unknown types", () => {
+    expect(getRepairTaskExecutionHint({ type: "FAQ" })).toContain("FAQ")
+    expect(getRepairTaskExecutionHint({ type: "UNKNOWN_TYPE" })).toContain("更新现有页面")
+    expect(getRepairTaskAcceptanceCriteria({ type: "COMPARISON" }).join(" ")).toContain("对比结论")
+    expect(getRepairTaskAcceptanceCriteria({ type: "UNKNOWN_TYPE" }).join(" ")).toContain("关联 query")
+  })
+
+  it("does not crash on malformed evidenceJson or briefJson", () => {
+    const detail = buildRepairTaskDetailViewModel({
+      task: {
+        type: "LOCAL_SERVICE_PAGE",
+        evidenceJson: ["bad", "shape"],
+        briefJson: "bad shape",
+      },
+      queryRun: {
+        rawOutput: "一段可读回答摘要。",
+      },
+      analysis: {
+        competitorsJson: "bad shape",
+        evidenceSpansJson: "bad shape",
+      },
+    })
+
+    expect(detail.evidenceSummary.evidenceGap).toBe("暂未记录 evidence gap")
+    expect(detail.competitorSummary).toBe("暂未识别明确竞品。")
+    expect(detail.answerSummary).toContain("一段可读回答摘要")
   })
 })
