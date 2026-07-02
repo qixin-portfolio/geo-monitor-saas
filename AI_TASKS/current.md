@@ -12,6 +12,7 @@
 ## GitHub 入口
 
 - 分支：`codex/repair-task-workbench-v0.1`
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/25](https://github.com/qixin-portfolio/geo-monitor-saas/pull/25)
 - 基线：远端 `main`
 - 当前 main：`08580e4298b2bab96d91b13535967aad0ef720c3`
 - 依赖状态：PR #21 / #22 / #23 / #24 均已合并。
@@ -102,7 +103,7 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段已完成。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
 - [ ] 本地 Browser QA：blocked，干净克隆只有 `.env.example`，无本地非生产 `DATABASE_URL`，未复制或保存任何 secret。
-- [ ] PR 已创建。
+- [x] PR 已创建：#25。
 
 ## 是否需要 Loop
 

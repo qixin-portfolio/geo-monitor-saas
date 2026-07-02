@@ -11,7 +11,8 @@
 |------|------|
 | 当前任务 | 证据化修复工作台 v0.1 |
 | 执行分支 | `codex/repair-task-workbench-v0.1` |
-| 状态 | 执行中，等待验证与 PR 审查 |
+| 状态 | PR #25 已创建，等待人工审查 |
+| GitHub 入口 | PR #25：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/25](https://github.com/qixin-portfolio/geo-monitor-saas/pull/25) |
 | 当前 main | `08580e4298b2bab96d91b13535967aad0ef720c3` |
 | 上一轮依赖 | PR #21 / #22 / #23 / #24 均已合并到 main |
 | 本轮性质 | 低风险展示 + ViewModel 整理；不改 schema；不新增写库路径 |
