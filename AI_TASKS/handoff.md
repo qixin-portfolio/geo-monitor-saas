@@ -9,31 +9,32 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | RepairTask Risk Review 审核状态设计 v0.1.2 / Stage 2.2 |
-| 执行分支 | `codex/repair-task-risk-review-v0.1` |
-| 状态 | PR #27 已创建，等待人工审查 |
-| GitHub 入口 | [PR #27](https://github.com/qixin-portfolio/geo-monitor-saas/pull/27) |
-| 当前 main | `a8db463df222b451f7a74107476730d94f48a88b` |
-| 上一轮依赖 | PR #21 / #22 / #23 / #24 / #25 / #26 均已合并到 main |
-| 本轮性质 | Risk Review 展示 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
+| 当前任务 | RepairTask Retest Before / After 复测占位升级 v0.1.3 / Stage 2.3 |
+| 执行分支 | `codex/repair-task-retest-plan-v0.1` |
+| 状态 | 开发中，PR 待创建 |
+| GitHub 入口 | 待创建 |
+| 当前 main | `9de8ccb6e33bea7fe4b4406176819ca49da7a11b` |
+| 上一轮依赖 | PR #25 / #26 / #27 均已合并到 main |
+| 本轮性质 | Retest Before / After 展示 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
 | 是否使用真实客户数据 | 否 |
 
 ## 阶段结论
 
-阶段 2.1 已完成：RepairTask Detail 页面已拆成任务概览、证据依据、建议动作、风险审核、复测与报告占位 5 个区块。
+阶段 2.2 已完成：RepairTask Detail 页的风险审核已升级为只读执行决策卡。
 
-本轮进入 Stage 2.2，只增强“风险审核建议”展示，让运营在执行前看到更明确的风险等级、执行决策、补证据要求、禁止事项和 Human Gate 提醒。
+本轮进入 Stage 2.3，只增强“复测与报告占位”展示，让运营和老板在执行前看到修复前状态、复测目标、观察指标、改善 / 暂无变化 / 风险未通过判定，以及未来报告会如何解释结果。
 
 ## 本轮目标
 
-Risk Review 区块升级为执行决策卡：
+Retest / Report 区块升级为复测与验收计划：
 
-- 风险等级：`GREEN` / `YELLOW` / `RED`。
-- 执行建议：是否可进入内容制作、是否需要补证据、是否禁止直接执行。
-- 风险原因：沿用启发式风险规则。
-- 需要补充的证据：按任务类型和风险等级给出清单。
-- 禁止事项：按风险等级给出不能做的动作。
-- Human Gate 提醒：明确系统不会自动发布、不会自动修改线上内容、不会绕过负责人审核。
+- 修复前状态：当前 query、品牌提及 / 推荐状态、evidence 缺口、risk level、task type。
+- 复测目标：按任务类型生成目标。
+- 待观察指标：品牌提及、品牌推荐、推荐语、引用源、竞品压制、情感、事实错误、风险等级。
+- 改善判定：从未提及到被提及、从未推荐到被推荐、引用新增内容、推荐语更准确等。
+- 暂无变化判定：仍未提及、仍只推荐竞品、未引用新增内容、回答无明显变化等。
+- 风险未通过判定：错误引用、夸大表达、虚假表述、黄色 / 红色风险未通过等。
+- 老板报告摘要占位：只说明未来如何对比，不承诺排名、推荐或流量提升。
 
 ## 安全边界
 
@@ -54,14 +55,17 @@ Risk Review 区块升级为执行决策卡：
 - 不做 Lead Attribution。
 - 不做 PDF。
 - 不新增自动发布能力。
+- 不新增真实 retest 执行能力。
+- 不调用 OpenAI / Gemini / DeepSeek / 豆包 / 千问等外部 AI。
+- 不新增 cron / queue / background job。
 - 不跳过 Human Gate。
 
 ## 当前修改文件
 
-- `docs/product/repair-task-workbench-v0.1.md`：追加 Stage 2.2 Risk Review 审核状态设计。
-- `src/lib/content-backlog/repair-task-workbench.ts`：新增 / 优化 Risk Review 纯函数和 detail view model 字段。
-- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充 risk review 单测。
-- `src/app/dashboard/content-backlog/[id]/page.tsx`：风险审核区块升级为执行决策卡。
+- `docs/product/repair-task-workbench-v0.1.md`：追加 Stage 2.3 Retest Before / After 复测占位设计。
+- `src/lib/content-backlog/repair-task-workbench.ts`：新增 / 优化 Retest Plan 纯函数和 detail view model 字段。
+- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充 retest plan 单测。
+- `src/app/dashboard/content-backlog/[id]/page.tsx`：复测区块升级为“复测与验收计划”。
 - `AI_TASKS/current.md`：同步当前任务状态。
 - `AI_TASKS/handoff.md`：同步当前交接状态。
 
@@ -72,8 +76,8 @@ Risk Review 区块升级为执行决策卡：
 - `queryRunAnalysis` 查询仍使用 `findFirst`，并通过 `queryRun.query.tenantId = tenant.id` 限制当前 tenant。
 - 页面没有新增 public API route。
 - 页面没有新增写库按钮。
-- 页面没有新增审核通过按钮。
-- 页面没有新增发布按钮。
+- 页面没有新增“开始复测”按钮。
+- 页面没有新增“生成报告 / PDF”按钮。
 - 页面没有新增批量入口、无人执行入口、Lead Attribution 或 PDF。
 - ViewModel 纯函数不访问 DB / env / network / session / file IO。
 
@@ -84,24 +88,26 @@ Risk Review 区块升级为执行决策卡：
 - `pnpm build`：通过。
 - `git diff --check`：通过。
 - Browser QA：Local 非生产通过。
-  - `/dashboard/content-backlog` 正常加载，列表展示任务类型、风险等级、状态。
-  - RepairTask 详情页正常加载，展示风险等级、执行建议、风险原因、需要补充的证据、禁止事项、Human Gate 提醒。
-  - 未新增审核通过按钮、自动发布按钮、批量入口或无人执行入口。
+  - `/dashboard/content-backlog` 正常加载，列表展示当前 tenant 的 RepairTask。
+  - RepairTask 详情页正常加载，“复测与验收计划”展示修复前状态、复测目标、待观察指标、改善判定、暂无变化判定、风险未通过判定、老板报告摘要占位。
+  - 未新增“开始复测”按钮。
+  - 未新增“生成报告 / PDF”按钮。
+  - 未触发外部 AI 调用。
   - 不存在 task id 返回 404 / safe fallback。
   - GeoContentTask 计数保持 `1 -> 1`，QA 过程中未新增写库。
   - 跨 tenant URL 测试未执行：本地 dev fallback 只有一个 tenant session；代码层仍保持 tenant-scoped detail query。
 
 ## 风险与注意事项
 
-- 风险等级仍是启发式提示，不是法律 / 合规最终结论，也不是平台官方归因。
-- Risk Review 不保存审核状态，不记录审核人，不新增审核流。
-- 红 / 黄 / 绿只指导人工判断，不自动执行，不自动发布。
+- Retest Plan 是验收计划，不是复测结果。
+- 本轮不保存复测结果，不记录复测人，不新增报告流。
+- 文案不能表达“已经改善”“已经复测”“AI 一定会推荐”。
 - 本轮不是 production rollout，不允许直接进入 production 发布。
 
 ## 下一步建议
 
-1. 人工审查 PR #27。
-2. 审查重点看 Risk Review 文案是否克制、是否无新增写库路径、是否保持 tenant-scoped detail query。
+1. 创建 PR，等待人工审查。
+2. 人工审查重点看 Retest Plan 文案是否克制、是否无新增写库路径、是否保持 tenant-scoped detail query。
 3. 不自动合并，不进入 production rollout。
 
 ---
@@ -132,3 +138,4 @@ Risk Review 区块升级为执行决策卡：
 | 2026-07-02 | AI_TASKS 状态同步 | PR #24 | 已合并 | RepairTask 单条按钮链路阶段完成，下一阶段为证据化修复工作台设计 |
 | 2026-07-02 | RepairTask Workbench v0.1 | PR #25 | 已合并 | 证据化修复工作台 v0.1，tenant-scoped detail query 和非生产 Browser QA 通过 |
 | 2026-07-02 | RepairTask Detail Sections v0.1.1 | PR #26 | 已合并 | 详情页 5 区块优化，非 production rollout |
+| 2026-07-02 | RepairTask Risk Review v0.1.2 | PR #27 | 已合并 | 风险审核建议卡，非 production rollout |

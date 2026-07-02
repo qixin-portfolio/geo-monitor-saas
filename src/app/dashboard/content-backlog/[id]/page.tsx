@@ -137,46 +137,6 @@ function uniqueEvidenceSpans(values: EvidenceSpan[]) {
   return result
 }
 
-function getExpectedOutcomes({
-  type,
-  brandName,
-  targetKeyword,
-}: {
-  type: string
-  brandName: string
-  targetKeyword: string
-}) {
-  switch (type) {
-    case "ARTICLE":
-      return [
-        `让 AI 在回答“${targetKeyword}”时，更容易引用 ${brandName} 的本地解释和选择标准。`,
-        "把品牌从“没出现”往“被提及、被比较”推进一步。",
-      ]
-    case "COMPARISON":
-      return [
-        `让 AI 更清楚 ${brandName} 和本地竞品之间的差异。`,
-        "减少竞品单方面占据推荐位的情况。",
-      ]
-    case "FAQ":
-      return [
-        `让 AI 有更结构化的问答素材可引用。`,
-        `强化 ${brandName} 的解释力，而不是只停留在名字被提到。`,
-      ]
-    case "CASE_PAGE":
-      return [
-        "补上真实案例证据，提升自然推荐的可信度。",
-        "让旧房改造、翻新类问题更容易带出品牌。",
-      ]
-    case "LOCAL_SERVICE_PAGE":
-      return [
-        "把服务场景、适合人群和核心卖点讲透。",
-        "让 AI 更容易理解品牌在本地场景里的具体价值。",
-      ]
-    default:
-      return ["补齐 AI 容易读取和引用的内容资产。", "让品牌信息更完整、更可比较。"]
-  }
-}
-
 export default async function ContentTaskDetailPage({
   params,
 }: {
@@ -235,18 +195,11 @@ export default async function ContentTaskDetailPage({
   ]).slice(0, 8)
 
   const brandName = safeText(tenant.brandName, "当前品牌")
-  const targetKeyword = safeText(task.targetKeyword, safeText(task.sourceQuery, "本地服务问题"))
   const sourceQuery = safeText(run?.query.text ?? task.sourceQuery, "暂未记录原始问题")
   const detailView = buildRepairTaskDetailViewModel({
     task,
     queryRun: run,
     analysis: run?.analysis,
-  })
-
-  const expectedOutcomes = getExpectedOutcomes({
-    type: task.type,
-    brandName,
-    targetKeyword,
   })
 
   return (
@@ -516,40 +469,62 @@ export default async function ContentTaskDetailPage({
       <section className="rounded-lg border bg-card p-5">
         <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="font-medium">5. 复测与报告占位</h2>
+          <h2 className="font-medium">5. 复测与验收计划</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <div className="rounded-md bg-muted/40 p-3 text-sm lg:col-span-2">
+            <p className="text-xs text-muted-foreground">修复前状态</p>
+            <p className="mt-1">{detailView.retestPlan.beforeState}</p>
+            <p className="mt-2 text-muted-foreground">{detailView.retestPlan.statusLabel}</p>
+          </div>
           <div className="space-y-3 text-sm">
             <div className="rounded-md bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">修复前状态</p>
-              <p className="mt-1">{detailView.retestPlan.beforeState}</p>
+              <p className="text-xs text-muted-foreground">复测目标</p>
+              <div className="mt-2 flex flex-col gap-2">
+                {detailView.retestPlan.retestGoals.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
+              </div>
             </div>
             <div className="rounded-md bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">待复测状态</p>
-              <p className="mt-1">{detailView.retestPlan.pendingState}</p>
-            </div>
-            <div className="rounded-md bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">报告摘要占位</p>
-              <p className="mt-1">{detailView.retestPlan.reportSummary}</p>
+              <p className="text-xs text-muted-foreground">待观察指标</p>
+              <div className="mt-2 flex flex-col gap-2">
+                {detailView.retestPlan.observationMetrics.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
+              </div>
+              <p className="mt-3 text-muted-foreground">{detailView.retestPlan.pendingState}</p>
             </div>
           </div>
           <div className="space-y-3 text-sm">
             <div className="rounded-md bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">未来复测指标</p>
+              <p className="text-xs text-muted-foreground">改善判定规则</p>
               <div className="mt-2 flex flex-col gap-2">
-                {detailView.retestPlan.metrics.map((item) => (
+                {detailView.retestPlan.improvementCriteria.map((item) => (
                   <p key={item}>{item}</p>
                 ))}
               </div>
             </div>
             <div className="rounded-md bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">完成后预期提升</p>
+              <p className="text-xs text-muted-foreground">暂无变化判定规则</p>
               <div className="mt-2 flex flex-col gap-2">
-                {expectedOutcomes.map((item) => (
+                {detailView.retestPlan.noChangeCriteria.map((item) => (
                   <p key={item}>{item}</p>
                 ))}
               </div>
             </div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-3 text-sm">
+            <p className="text-xs text-muted-foreground">风险未通过判定规则</p>
+            <div className="mt-2 flex flex-col gap-2">
+              {detailView.retestPlan.riskCriteria.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-dashed p-3 text-sm">
+            <p className="text-xs text-muted-foreground">老板报告摘要占位</p>
+            <p className="mt-1">{detailView.retestPlan.reportSummary}</p>
           </div>
         </div>
       </section>
