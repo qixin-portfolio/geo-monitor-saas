@@ -92,6 +92,27 @@ export function RunNowButton() {
         return
       }
 
+      if (data.status === "SUCCESS") {
+        setStatus("done")
+        router.refresh()
+        setMessage(`监测完成，${data.successCount} 个查询全部成功`)
+        return
+      }
+
+      if (data.status === "PARTIAL_FAILURE") {
+        setStatus("done")
+        router.refresh()
+        setMessage(`监测完成，${data.successCount} 成功，${data.failureCount} 失败`)
+        return
+      }
+
+      if (data.status === "FAILED") {
+        setStatus("error")
+        router.refresh()
+        setMessage(`监测失败，${data.failureCount} 个查询失败`)
+        return
+      }
+
       setStatus("done")
       router.refresh()
       setMessage(`监测已触发，状态：${data.status}`)

@@ -5,6 +5,7 @@ import type {
   ProviderCallInput,
   ProviderCallResult,
 } from "./provider"
+import { getMonitoringConfig } from "./config"
 
 export class OpenAIProvider implements MonitoringProvider {
   async call({ prompt, model }: ProviderCallInput): Promise<ProviderCallResult> {
@@ -15,18 +16,24 @@ export class OpenAIProvider implements MonitoringProvider {
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
+    const config = getMonitoringConfig()
 
     const rawRequestJson = {
       provider: "openai",
       model,
       input: prompt,
+      max_output_tokens: config.maxTokens,
     }
     const startedAt = Date.now()
 
-    const response = await client.responses.create({
-      model,
-      input: prompt,
-    })
+    const response = await client.responses.create(
+      {
+        model,
+        input: prompt,
+        max_output_tokens: config.maxTokens,
+      },
+      { timeout: config.timeoutMs }
+    )
 
     return {
       provider: "openai",

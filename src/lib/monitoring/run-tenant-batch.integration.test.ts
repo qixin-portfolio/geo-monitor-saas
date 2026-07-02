@@ -73,6 +73,7 @@ describeIfDb("runTenantBatch integration", () => {
 
     expect(result.status).toBe("failed")
     expect(batch.status).toBe("FAILED")
+    expect(batch.successCount + batch.failureCount).toBe(batch.queryCount)
     expect(batch.queryRuns).toHaveLength(1)
     expect(batch.queryRuns[0]?.status).toBe("FAILED")
     expect(batch.queryRuns[0]?.errorMessage).toContain("OPENAI_API_KEY")
