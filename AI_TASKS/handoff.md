@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | RepairTask 单条按钮链路阶段收口：AI_TASKS 状态同步 |
 | 执行分支 | `codex/sync-ai-tasks-after-pr23` |
-| 状态 | RepairTask 单条按钮链路工程阶段已完成；本轮只同步状态 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR #24 已创建，等待人工审查与合并确认；RepairTask 单条按钮链路工程阶段已完成 |
+| GitHub 入口 | PR #24：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/24](https://github.com/qixin-portfolio/geo-monitor-saas/pull/24) |
 | 当前 main | `6fc9cc56b3ac1654670464286cdd37c270e9f989` |
 | 上一轮依赖 | PR #21 / PR #22 / PR #23 均已合并到 main |
 | 本轮性质 | docs-only / AI_TASKS-only，不修改功能代码 |
@@ -111,11 +111,10 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 
 ### 下一步建议
 
-1. 创建 docs-only PR。
-2. 等待 ChatGPT / 用户审查状态同步。
-3. 合并后，下一阶段可讨论“证据化修复工作台”设计。
-4. 不要直接 production rollout。
-5. 不要进入批量创建或无人确认执行。
+1. 等待 ChatGPT / 用户审查 PR #24。
+2. 合并后，下一阶段可讨论“证据化修复工作台”设计。
+3. 不要直接 production rollout。
+4. 不要进入批量创建或无人确认执行。
 
 ---
 

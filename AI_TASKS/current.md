@@ -11,11 +11,11 @@ RepairTask 单条按钮链路阶段收口：AI_TASKS 状态同步
 
 ## GitHub 入口
 
-- PR：待创建
+- PR：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/24](https://github.com/qixin-portfolio/geo-monitor-saas/pull/24)
 - 分支：`codex/sync-ai-tasks-after-pr23`
 - 基线：远端 `main`
 - 当前 main：`6fc9cc56b3ac1654670464286cdd37c270e9f989`
-- 当前状态：RepairTask 单条按钮链路工程阶段已完成；本轮只同步 AI_TASKS 状态。
+- 当前状态：PR #24 已创建，等待人工审查与合并确认；RepairTask 单条按钮链路工程阶段已完成。
 
 ## 阶段结论
 
@@ -112,7 +112,7 @@ RepairTask 单条“加入修复任务池”按钮链路工程阶段可以标记
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
 - [x] `git diff --check` 通过。
-- [ ] PR 已创建。
+- [x] PR 已创建。
 
 ## 是否需要 Loop
 
