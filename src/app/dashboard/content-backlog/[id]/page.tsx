@@ -470,22 +470,45 @@ export default async function ContentTaskDetailPage({
       <section className="rounded-lg border bg-card p-5">
         <div className="mb-3 flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-primary" />
-          <h2 className="font-medium">4. 风险审核</h2>
+          <h2 className="font-medium">4. 风险审核建议</h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className={`rounded-md border p-3 ${RISK_CLASS_NAMES[detailView.riskReview.level]}`}>
+        <div className="grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className={`rounded-md border p-4 ${RISK_CLASS_NAMES[detailView.riskReview.level]}`}>
             <p className="text-xs">风险等级</p>
             <p className="mt-1 font-medium">
               {detailView.riskReview.level} / {REPAIR_TASK_RISK_LABELS[detailView.riskReview.level]}
             </p>
+            <p className="mt-3 text-sm">{detailView.riskReview.summary}</p>
           </div>
-          <div className="rounded-md bg-muted/40 p-3 text-sm md:col-span-2">
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
+            <p className="text-xs text-muted-foreground">执行建议</p>
+            <p className="mt-1">{detailView.riskReview.executionDecision}</p>
+          </div>
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
             <p className="text-xs text-muted-foreground">风险原因</p>
             <p className="mt-1">{detailView.riskReview.reason}</p>
           </div>
-          <div className="rounded-md bg-muted/40 p-3 text-sm md:col-span-3">
-            <p className="text-xs text-muted-foreground">风险处理建议</p>
-            <p className="mt-1">{detailView.riskReview.handling}</p>
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
+            <p className="text-xs text-muted-foreground">需要补充的证据</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {detailView.riskReview.requiredEvidence.map((item) => (
+                <span key={item} className="rounded bg-background px-2 py-1 text-xs">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md bg-muted/40 p-4 text-sm">
+            <p className="text-xs text-muted-foreground">禁止事项</p>
+            <div className="mt-2 flex flex-col gap-2">
+              {detailView.riskReview.prohibitedActions.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-dashed p-4 text-sm lg:col-span-2">
+            <p className="text-xs text-muted-foreground">Human Gate 提醒</p>
+            <p className="mt-1">{detailView.riskReview.humanGateNotice}</p>
           </div>
         </div>
       </section>
