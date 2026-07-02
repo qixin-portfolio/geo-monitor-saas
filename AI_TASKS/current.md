@@ -12,7 +12,7 @@ RepairTask Retest Before / After 复测占位升级 v0.1.3 / Stage 2.3
 ## GitHub 入口
 
 - 分支：`codex/repair-task-retest-plan-v0.1`
-- PR：待创建
+- PR：[#28](https://github.com/qixin-portfolio/geo-monitor-saas/pull/28)
 - 基线：远端 `main`
 - 当前 main：`9de8ccb6e33bea7fe4b4406176819ca49da7a11b`
 - 依赖状态：PR #25 / #26 / #27 均已合并。
@@ -62,7 +62,7 @@ RepairTask Retest Before / After 复测占位升级 v0.1.3 / Stage 2.3
 - [x] 运行 `pnpm build`。
 - [x] 运行 `git diff --check`。
 - [x] 完成本地非生产 Browser QA。
-- [ ] 创建 PR，等待人工审查。
+- [x] 创建 PR，等待人工审查。
 
 ## 禁止事项
 
