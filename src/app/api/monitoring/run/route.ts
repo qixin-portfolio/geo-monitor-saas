@@ -23,7 +23,6 @@ export async function POST() {
     })
   }
 
-  // Create a PENDING batch immediately and return
   const batch = await prisma.runBatch.create({
     data: {
       tenantId: tenant.id,
@@ -34,17 +33,60 @@ export async function POST() {
     },
   })
 
-  // Fire-and-forget: run the batch in the background
-  runTenantBatch({
-    tenantId: tenant.id,
-    triggerType: "MANUAL",
-    batchId: batch.id,
-  }).catch((err) => {
-    console.error("[monitoring/run] Background batch failed:", err)
-  })
+  try {
+    await runTenantBatch({
+      tenantId: tenant.id,
+      triggerType: "MANUAL",
+      batchId: batch.id,
+    })
 
-  return NextResponse.json({
-    batchId: batch.id,
-    status: "started",
-  })
+    const finishedBatch = await prisma.runBatch.findUnique({
+      where: { id: batch.id },
+      select: {
+        id: true,
+        status: true,
+        queryCount: true,
+        successCount: true,
+        failureCount: true,
+      },
+    })
+
+    return NextResponse.json({
+      batchId: batch.id,
+      status: finishedBatch?.status ?? "UNKNOWN",
+      queryCount: finishedBatch?.queryCount ?? 0,
+      successCount: finishedBatch?.successCount ?? 0,
+      failureCount: finishedBatch?.failureCount ?? 0,
+    })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "unknown-monitoring-error"
+    const failedBatch = await prisma.runBatch.update({
+      where: { id: batch.id },
+      data: {
+        status: "FAILED",
+        errorSummary: message,
+        finishedAt: new Date(),
+      },
+      select: {
+        id: true,
+        status: true,
+        queryCount: true,
+        successCount: true,
+        failureCount: true,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        batchId: failedBatch.id,
+        status: failedBatch.status,
+        queryCount: failedBatch.queryCount,
+        successCount: failedBatch.successCount,
+        failureCount: failedBatch.failureCount,
+        error: "Manual monitoring run failed.",
+      },
+      { status: 500 }
+    )
+  }
 }

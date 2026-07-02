@@ -9,32 +9,29 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | RepairTask Retest Before / After 复测占位升级 v0.1.3 / Stage 2.3 |
-| 执行分支 | `codex/repair-task-retest-plan-v0.1` |
-| 状态 | PR #28 已创建，等待人工审查 |
-| GitHub 入口 | [PR #28](https://github.com/qixin-portfolio/geo-monitor-saas/pull/28) |
-| 当前 main | `9de8ccb6e33bea7fe4b4406176819ca49da7a11b` |
-| 上一轮依赖 | PR #25 / #26 / #27 均已合并到 main |
-| 本轮性质 | Retest Before / After 展示 + ViewModel 纯函数 + 单测 + 文档；不改 schema；不新增写库路径 |
+| 当前任务 | 修复 manual monitoring run fire-and-forget 导致 batch 卡 RUNNING |
+| 执行分支 | `codex/fix-manual-monitoring-run-await` |
+| 状态 | PR #31 已创建，等待人工审查 |
+| GitHub 入口 | [PR #31](https://github.com/qixin-portfolio/geo-monitor-saas/pull/31) |
+| 当前 main | `dfd9c53dc1be2e710e4b80c1472cf6b1ea7a7564` |
+| 上一轮依赖 | 从远端 `main` 新 worktree 开始；原仓库脏工作区未触碰 |
+| 本轮性质 | monitoring 手动运行可靠性小修 + OpenAI timeout/max token + 单测；不改 schema；不新增写库路径 |
 | 是否使用真实客户数据 | 否 |
 
 ## 阶段结论
 
-阶段 2.2 已完成：RepairTask Detail 页的风险审核已升级为只读执行决策卡。
+诊断确认：`src/app/api/monitoring/run/route.ts` 先创建 `RunBatch(PENDING)`，再 fire-and-forget 调用 `runTenantBatch`。这会在 Next / serverless 请求结束后留下 `RUNNING` batch 的风险。
 
-本轮进入 Stage 2.3，只增强“复测与报告占位”展示，让运营和老板在执行前看到修复前状态、复测目标、观察指标、改善 / 暂无变化 / 风险未通过判定，以及未来报告会如何解释结果。
+本轮改为 route 内 `await runTenantBatch`，并在 runner 抛错时把本次 batch 标为 `FAILED` 后返回安全错误。
 
 ## 本轮目标
 
-Retest / Report 区块升级为复测与验收计划：
-
-- 修复前状态：当前 query、品牌提及 / 推荐状态、evidence 缺口、risk level、task type。
-- 复测目标：按任务类型生成目标。
-- 待观察指标：品牌提及、品牌推荐、推荐语、引用源、竞品压制、情感、事实错误、风险等级。
-- 改善判定：从未提及到被提及、从未推荐到被推荐、引用新增内容、推荐语更准确等。
-- 暂无变化判定：仍未提及、仍只推荐竞品、未引用新增内容、回答无明显变化等。
-- 风险未通过判定：错误引用、夸大表达、虚假表述、黄色 / 红色风险未通过等。
-- 老板报告摘要占位：只说明未来如何对比，不承诺排名、推荐或流量提升。
+- `POST /api/monitoring/run` 不再 fire-and-forget。
+- 保留已有 batch 创建逻辑，手动请求等待 batch 进入终态。
+- 返回 `batchId`、`status`、`queryCount`、`successCount`、`failureCount`。
+- `RunNowButton` 识别 awaited route 直接返回的终态，失败时显示失败状态。
+- OpenAI provider 使用已有 `MONITORING_TIMEOUT_MS` / `MONITORING_MAX_TOKENS` 配置。
+- 测试覆盖 route await、runner failure fallback、missing key count 断言、OpenAI 参数传递。
 
 ## 安全边界
 
@@ -43,72 +40,54 @@ Retest / Report 区块升级为复测与验收计划：
 - 不修改 env。
 - 不新增 public API route。
 - 不新增新的写库路径。
-- 不新增 server action。
-- 不改变 `createEvidenceRepairTask`。
-- 不改变 `getClerkTenant` / tenant resolution。
 - 不部署 production。
 - 不连接 production DB。
 - 不使用真实客户数据。
 - 不提交 `.env.local`、seed、payload 或临时 runner。
-- 不做批量创建。
-- 不做无人确认执行。
-- 不做 Lead Attribution。
-- 不做 PDF。
-- 不新增自动发布能力。
-- 不新增真实 retest 执行能力。
-- 不调用 OpenAI / Gemini / DeepSeek / 豆包 / 千问等外部 AI。
-- 不新增 cron / queue / background job。
-- 不跳过 Human Gate。
+- 不打印 `OPENAI_API_KEY` / `DATABASE_URL` / Clerk Secret。
+- 不调用真实 OpenAI API。
+- 不做批量监测。
+- 不做 production rollout。
 
 ## 当前修改文件
 
-- `docs/product/repair-task-workbench-v0.1.md`：追加 Stage 2.3 Retest Before / After 复测占位设计。
-- `src/lib/content-backlog/repair-task-workbench.ts`：新增 / 优化 Retest Plan 纯函数和 detail view model 字段。
-- `src/lib/content-backlog/repair-task-workbench.test.ts`：补充 retest plan 单测。
-- `src/app/dashboard/content-backlog/[id]/page.tsx`：复测区块升级为“复测与验收计划”。
-- `AI_TASKS/current.md`：同步当前任务状态。
-- `AI_TASKS/handoff.md`：同步当前交接状态。
+- `src/app/api/monitoring/run/route.ts`：manual run 改为 awaited execution，异常时 finalize batch 为 `FAILED`。
+- `src/app/api/monitoring/run/route.test.ts`：覆盖 route 等待 runner 和 runner 抛错 fallback。
+- `src/components/run-now-button.tsx`：支持 manual route 直接返回终态。
+- `src/lib/monitoring/openai-provider.ts`：接入 timeout / max token 配置。
+- `src/lib/monitoring/openai-provider.test.ts`：覆盖 OpenAI 参数传递。
+- `src/lib/monitoring/run-tenant-batch.integration.test.ts`：补充 missing key count 断言。
+- `AI_TASKS/current.md` / `AI_TASKS/handoff.md`：同步当前任务。
 
 ## 已确认
 
-- `GeoContentTask` 详情查询仍使用 `findFirst({ where: { id, tenantId: tenant.id } })`。
-- `queryRun` 查询仍使用 `findFirst`，并通过 `query.tenantId = tenant.id` 限制当前 tenant。
-- `queryRunAnalysis` 查询仍使用 `findFirst`，并通过 `queryRun.query.tenantId = tenant.id` 限制当前 tenant。
-- 页面没有新增 public API route。
-- 页面没有新增写库按钮。
-- 页面没有新增“开始复测”按钮。
-- 页面没有新增“生成报告 / PDF”按钮。
-- 页面没有新增批量入口、无人执行入口、Lead Attribution 或 PDF。
-- ViewModel 纯函数不访问 DB / env / network / session / file IO。
+- 原仓库脏工作区未 stash / reset / clean / commit。
+- 新 worktree：`/private/tmp/geo-monitor-monitoring-run-fix`。
+- route 仍使用已有 `/api/monitoring/run`，未新增 public API route。
+- 未改 schema / migration / env。
+- 未连接 production DB。
+- 未打印或保存 secret。
+- 未调用真实 OpenAI API。
 
 ## 验证记录
 
-- `pnpm test:unit`：通过。
+- `pnpm test:unit`：通过，22 test files / 126 tests。
 - `pnpm typecheck`：通过。
 - `pnpm build`：通过。
 - `git diff --check`：通过。
-- Browser QA：Local 非生产通过。
-  - `/dashboard/content-backlog` 正常加载，列表展示当前 tenant 的 RepairTask。
-  - RepairTask 详情页正常加载，“复测与验收计划”展示修复前状态、复测目标、待观察指标、改善判定、暂无变化判定、风险未通过判定、老板报告摘要占位。
-  - 未新增“开始复测”按钮。
-  - 未新增“生成报告 / PDF”按钮。
-  - 未触发外部 AI 调用。
-  - 不存在 task id 返回 404 / safe fallback。
-  - GeoContentTask 计数保持 `1 -> 1`，QA 过程中未新增写库。
-  - 跨 tenant URL 测试未执行：本地 dev fallback 只有一个 tenant session；代码层仍保持 tenant-scoped detail query。
+- API smoke test：blocked，未授权真实 API 调用，未提供明确非生产 DB / OpenAI key。
 
 ## 风险与注意事项
 
-- Retest Plan 是验收计划，不是复测结果。
-- 本轮不保存复测结果，不记录复测人，不新增报告流。
-- 文案不能表达“已经改善”“已经复测”“AI 一定会推荐”。
-- 本轮不是 production rollout，不允许直接进入 production 发布。
+- 手动监测请求会等待监测完成；如果后续 active query 规模变大，仍应单独设计 queue / worker。
+- 本轮没有改 cron/internal monitoring route。
+- API smoke test 需要非生产 DB 和非生产 OpenAI key，且只跑 1 个 query。
 
 ## 下一步建议
 
-1. 人工审查 PR #28。
-2. 审查重点看 Retest Plan 文案是否克制、是否无新增写库路径、是否保持 tenant-scoped detail query。
-3. 不自动合并，不进入 production rollout。
+1. 跑完 unit / typecheck / build / diff check。
+2. 创建 PR，等待人工审查。
+3. 如有明确非生产环境，再做 1-query API smoke test。
 
 ---
 
