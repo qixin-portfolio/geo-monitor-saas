@@ -9,70 +9,51 @@
 
 | 字段 | 内容 |
 |------|------|
-| 当前任务 | Staging RepairTask Button QA：真实 Clerk / Preview 环境按钮级 QA 记录 |
-| 执行分支 | `codex/staging-repair-task-button-qa-record` |
-| 状态 | PR #21 已创建，等待人工审查与合并确认 |
-| GitHub 入口 | PR #21：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/21](https://github.com/qixin-portfolio/geo-monitor-saas/pull/21) |
-| 上一轮依赖 | PR #20 已合并到远端 main，本地按钮 QA 已记录 |
-| QA Preview 分支 | `staging/repair-task-button-qa` |
-| QA Preview commit | `91c8db392239400ca0f19964bad8d4a3eb145a26` |
-| QA 环境 | staging Preview + Supabase `geo-monitor-staging` + Clerk Staging |
-| QA 结果 | 19 pass / 0 fail / 0 blocked |
+| 当前任务 | Production Release Gate 设计：RepairTask 单条按钮 production 发布前 Gate |
+| 执行分支 | `codex/production-release-gate` |
+| 状态 | PR #22 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #22：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/22](https://github.com/qixin-portfolio/geo-monitor-saas/pull/22) |
+| 上一轮依赖 | PR #21 已合并到 main，Staging RepairTask Button QA 记录已落库 |
+| 本轮性质 | docs-only，不修改功能代码 |
 | 是否使用真实客户数据 | 否 |
 
 ## 本轮交接
 
 ### 修改文件
 
-- `docs/qa/staging-repair-task-button-qa-record.md`：新增 staging Preview + Clerk Staging 按钮级 QA 记录，覆盖 19 条用例。
-- `AI_TASKS/current.md`：记录本轮任务、边界、验收和限制。
+- `docs/qa/repair-task-production-release-gate.md`：新增 production 发布前 Gate，定义前置确认、最小 smoke test、禁止事项和回滚方案。
+- `AI_TASKS/current.md`：记录本轮任务、边界、验收和 Human Gate。
 - `AI_TASKS/handoff.md`：记录本轮交接。
 
-### QA 执行摘要
+### Gate 设计摘要
 
-- 未登录访问 staging Preview dashboard 被 Clerk Staging route protection 拦截。
-- `qa-a+clerk_test@example.com` 登录成功，只看到 Tenant A Evidence Map query。
-- 用户 A Drawer 可打开，RepairTask Draft 可见。
-- 打开页面 / Drawer 不直接创建 `GeoContentTask`。
-- 点击“加入修复任务池”先出现确认弹窗。
-- 点击取消不创建任务。
-- 用户 A 点击确认后创建单条任务，显示“已加入修复任务池。”。
-- 用户 A Content Backlog 可见 A 任务。
-- 登出 A 并登录 `qa-b+clerk_test@example.com` 后，只看到 Tenant B query / task。
-- 用户 B 点击确认后创建单条任务，显示“已加入修复任务池。”。
-- 最终 DB 只读验证：`staging_qa_tenant_a=1`，`staging_qa_tenant_b=1`。
-- 未发现 tenant 泄露。
-- Content Backlog 展示内容未发现 raw AI response、prompt、token、cookie、secret 或真实客户数据。
-- session pooler 曾出现 `EMAXCONNSESSION`；切换 transaction pooler 后页面稳定加载，未观察到 PgBouncer / prepared statement 错误。
+- PR #21 合并后，不代表可以直接 production rollout。
+- production 发布前必须人工确认 Production DB、Production Clerk、route protection、tenant resolution 和 Vercel env 边界。
+- Production 不得使用 staging Clerk key、staging Supabase、Neon 或测试库。
+- release 前只允许 production 只读 smoke test，不写库。
+- release 后最小 smoke test 只允许内部测试账号和内部测试 tenant。
+- 如执行 smoke test，只允许创建 1 条内部测试 tenant 的任务。
+- Gate 通过前禁止批量创建、无人确认执行、全租户开放、真实客户大范围开放、新增写库路径和公开 API。
+- 回滚优先隐藏入口、关闭按钮或回滚部署；不删除生产数据，不直接改 production DB。
 
 ### 安全边界
 
+- 不修改 `src`。
 - 不修改 Prisma schema。
 - 不生成 migration。
 - 不修改 env。
-- 不提交 `.env.local`。
-- 不修改 `src`。
 - 不新增 public API route。
 - 不新增新的写库路径。
-- 不修改 `createEvidenceRepairTask` server action。
-- 不提交 seed 脚本、payload 文件或仓库外 QA runner。
-- 不使用真实客户数据。
-- 不打印完整 `DATABASE_URL`。
-- 不打印 Clerk Secret、token、cookie 或密码。
-- 不连接 production / Neon 数据库。
-- 不修改 Production env。
-- 不做批量创建。
-- 不做无人确认执行。
+- 不部署 production。
+- 不跑 production DB。
+- 不改 UI。
+- 不改 server action。
+- 不接批量创建。
+- 不接无人确认执行。
 - 不做 Lead Attribution。
 - 不做 PDF。
-- 不做全平台接入。
-- 不部署 production。
-
-### Staging 环境限制
-
-- 本轮验证的是 staging Preview + Clerk Staging，不是 production。
-- Supabase SQL Editor 自动保存的 private Untitled query 草稿只包含只读 SQL / tenant 计数，不包含 secret。
-- 同一任务重复创建在本轮表现为 UI 已加入/禁用状态阻止重复点击，最终用 DB 计数确认没有重复创建。
+- 不提交 `.env.local`、seed、payload 或临时脚本。
+- 不使用真实客户数据。
 
 ### 验证记录
 
@@ -83,14 +64,15 @@
 
 ### 风险与注意事项
 
-- 幂等仍不是 DB unique constraint。
-- 本轮确认的是 staging 非生产链路，不是 production 验证。
-- 后续不应直接进入批量创建、无人确认执行或 production rollout。
+- 本轮只是 Gate 文档，不是 production 发布。
+- Gate 合并后仍需人工决定是否执行小范围 production smoke test。
+- production smoke test 如被批准，必须严格限制为内部测试账号和内部测试 tenant。
+- 后续不应直接进入批量创建、无人确认执行或全租户开放。
 
 ### 下一步建议
 
-1. 等待 ChatGPT / 用户审查 PR #21，不自动合并。
-2. PR 审查通过后，再由人工决定是否进入小范围 staging 观察或 production 前 Human Gate。
+1. 等待 ChatGPT / 用户审查 PR #22，不自动合并。
+2. PR 审查通过后，再由人工决定是否进行小范围 production smoke test。
 
 ---
 
@@ -113,3 +95,5 @@
 | 2026-07-01 | RepairTask Server Action Manual QA Record | PR #17 | 已合并 | 记录未执行状态和 QA 前置条件 |
 | 2026-07-01 | RepairTask Server Action Manual QA Execution | PR #18 | 已合并 | 本地非生产 Manual QA 15 pass / 0 fail / 0 blocked |
 | 2026-07-01 | Evidence Detail Drawer Single RepairTask Button | PR #19 | 已合并 | 单条按钮、确认弹窗、安全提示，复用已 QA 的 server action |
+| 2026-07-01 | RepairTask Button Browser QA | PR #20 | 已合并 | 本地非生产 Button Browser QA 15 pass / 0 fail / 0 blocked |
+| 2026-07-02 | Staging RepairTask Button QA Record | PR #21 | 已合并 | Staging Button QA 19 pass / 0 fail / 0 blocked |
