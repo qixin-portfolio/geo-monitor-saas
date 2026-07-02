@@ -11,8 +11,8 @@
 |------|------|
 | 当前任务 | Production Release Gate 设计：RepairTask 单条按钮 production 发布前 Gate |
 | 执行分支 | `codex/production-release-gate` |
-| 状态 | Gate 文档已起草，PR 待创建 |
-| GitHub 入口 | PR 待创建 |
+| 状态 | PR #22 已创建，等待人工审查与合并确认 |
+| GitHub 入口 | PR #22：[https://github.com/qixin-portfolio/geo-monitor-saas/pull/22](https://github.com/qixin-portfolio/geo-monitor-saas/pull/22) |
 | 上一轮依赖 | PR #21 已合并到 main，Staging RepairTask Button QA 记录已落库 |
 | 本轮性质 | docs-only，不修改功能代码 |
 | 是否使用真实客户数据 | 否 |
@@ -71,7 +71,7 @@
 
 ### 下一步建议
 
-1. 创建 docs-only PR，不自动合并。
+1. 等待 ChatGPT / 用户审查 PR #22，不自动合并。
 2. PR 审查通过后，再由人工决定是否进行小范围 production smoke test。
 
 ---
